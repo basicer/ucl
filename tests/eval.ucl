@@ -1,0 +1,47 @@
+test eval-1.1 {single argument} {
+    eval {format 22}
+} 22
+test eval-1.2 {multiple arguments} {
+    set a {$b}
+    set b xyzzy
+    eval format $a
+} xyzzy
+test eval-1.3 {single argument} {
+    eval concat a b c d e f g
+} {a b c d e f g}
+
+test eval-2.1 {error: not enough arguments} {catch eval} 1
+test eval-2.2 {error: not enough arguments} {
+    catch eval msg
+    set msg
+} {wrong # args: should be "eval arg ?arg ...?"}
+test eval-2.3 {error in eval'ed command} {
+    catch {eval {error "test error"}}
+} 1
+test eval-2.4 {error in eval'ed command} {
+    catch {eval {error "test error"}} msg
+    set msg
+} {test error}
+
+test eval-3.1 {eval and pure lists} {
+    eval [list list 1 2 3 4 5]
+} {1 2 3 4 5}
+test eval-3.2 {concatenating eval and pure lists} {
+    eval [list list 1] [list 2 3 4 5]
+} {1 2 3 4 5}
+test eval-3.3 {eval and canonical lists} {
+    set cmd [list list 1 2 3 4 5]
+    # Force existance of utf-8 rep
+    set dummy($cmd) $cmd
+    unset dummy
+    eval $cmd
+} {1 2 3 4 5}
+test eval-3.4 {concatenating eval and canonical lists} {
+    set cmd  [list list 1]
+    set cmd2 [list 2 3 4 5]
+    # Force existance of utf-8 rep
+    set dummy($cmd) $cmd
+    set dummy($cmd2) $cmd2
+    unset dummy
+    eval $cmd $cmd2
+} {1 2 3 4 5}

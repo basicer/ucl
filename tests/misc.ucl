@@ -1,0 +1,46 @@
+test add {add two numberes} {} {
+	+ 2 2
+} {4} 
+
+test add {add two numberes} {
+	+ 2 2
+} {6} 
+
+test concat {} {
+	concat a b c {d e} {f {g h} i} 
+} {a b c d e f {g h} i}
+
+test expr {2 + 5} {
+	expr 2 + 5
+} {7}
+
+test list {list a b c} {
+	list a b c
+} {a b c}
+
+test list {list "a b c"} {
+	list "a b c"
+} {{a b c}}
+
+test interp {} {
+	set x 10
+	return "a $x b"
+} {a 10 b}
+
+test proc {} {
+	proc tellRob {var} {
+		return "Yo Rob $var"
+	}
+	tellRob "Hello"
+} {Yo Rob Hello}
+
+
+test escape {} {
+	return "a\"b"
+} {a"b}
+
+
+test newline {} {
+	eval {return "a
+	b"}
+} "a\n\tb"
