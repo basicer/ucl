@@ -2,9 +2,6 @@ test add {add two numberes} {} {
 	+ 2 2
 } {4} 
 
-test add {add two numberes} {
-	+ 2 2
-} {6} 
 
 test concat {} {
 	concat a b c {d e} {f {g h} i} 
@@ -44,3 +41,20 @@ test newline {} {
 	eval {return "a
 	b"}
 } "a\n\tb"
+
+
+set i 0
+proc te {e v} {
+	incr i
+	test "reval-$i" $e {
+		expr $e
+	} "$v"
+}
+
+te {2 + 2} {4}
+te {2 + 2 * 2} {6}
+te {1 + ( 2 + 2 ) * 2} {9}
+te {( 2 + 2 ) * 2} {8}
+te {2 + 2 * 2 > 5} {1}
+te {1 > 2 && 2 <= 3} {1}
+te {1>2} {0}

@@ -47,9 +47,9 @@ local function ucl_eval(code, state)
 					end
 				end
 
-				error("Invalid Command: " .. lst[1].string .. ' at ' .. line .. ':' .. col)
+				error("Invalid Command: " .. lst[1].string .. ' at ' .. line .. ':' .. col, 0)
 			else
-				error("Invalid Command: " .. lst[1].string)
+				error("Invalid Command: " .. lst[1].string, 0)
 			end
 		end
 
@@ -71,26 +71,15 @@ local function ucl_eval(code, state)
 	return out
 end
 
-function Engine:eval(code, state)
-	state = state or self:state()
-	return ucl_eval(code, state)
-
+local expr = require('ucl/expr')
+local ucl_expr = function(code)
+	return Value.fromNumber(expr(code.string))
 end
 
-local function ucl_expr(code, state)
-	if type(code) ~= "table" then
-		code = Value.fromStringView(code, 0, #code)
-	end
-	local lst = code.list
-	if #lst == 1 then return lst[1] end
-	if #lst ~= 3 then error("Invalid expr, len:" .. #lst) end
-	return state.commands[lst[2].string](state, lst[1],lst[3])
-end
-
-function Engine:state() 
+local function newstate(engine) 
 	local state = {
-		commands = self.commands,
-		engine = self,
+		commands = engine.commands,
+		engine = engine,
 		variables = globals,
 		globals = globals,
 	}
@@ -109,6 +98,12 @@ function Engine:state()
 		return c;
 	end
 	return state
+end
+
+function Engine:eval(code, state)
+	state = state or newstate(self)
+	return ucl_eval(code, state)
+
 end
 
 function Engine.new()

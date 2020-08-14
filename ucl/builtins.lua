@@ -6,9 +6,28 @@ local ReturnCode_Return = 2
 local ReturnCode_Break = 3
 local ReturnCode_Continue = 4
 
+local function join(...)
+	local lst = {}
+	for k,v in ipairs({...}) do
+		lst[k] = v.string
+	end
+	local str = table.concat(lst, " ")
+	return Value.fromStringView(str, 0, #str)
+end
+
+local strings = {
+	index = function(interp, str, idx)
+		local i = idx.number + 1
+		return str:sub(i, i)
+	end,
+	length = function(interp, str)
+		return Value.fromNumber(#str.string)
+	end
+}
+
 return {
 	puts = function(interp, ...)
-		print("P", ...)
+		print(...)
 	end,
 
 	['+'] = function(interp, a, b) return a + b end,
@@ -18,12 +37,7 @@ return {
 	['==']  = function(interp, a, b) return Value.fromBoolean(a == b) end,
 
 	concat = function(interp, ...)
-		local lst = {}
-		for k,v in ipairs({...}) do
-			lst[k] = v.string
-		end
-		local str = table.concat(lst, " ")
-		return Value.fromStringView(str, 0, #str)
+		return join(...)
 	end,
 
 	eval = function(interp, ...)
@@ -44,14 +58,41 @@ return {
 	end,
 
 	expr = function(interp, ...)
-		return interp.expr(Value.fromList({...}), interp)
+		return interp.expr(join(...), interp)
 	end,
 
-	['if'] = function(interp, expr, body, elseword, ebody)
+	foreach = function(interp, var, list, body)
+		if not interp.variables[var.string] then
+			interp.variables[var.string] = {name=var, value=Value.none}
+		end
+		
+		local target = interp.variables[var.string]
+
+		local llist = list.list
+
+		for k,v in ipairs(llist) do
+			target.value = v
+			interp.eval(body)
+		end
+	end,
+
+	['if'] = function(interp, expr, thenword, body, elseword, ebody)
+		if thenword and thenword.string ~= 'then' then
+			body, elseword, ebody = thenword, body, elseword
+		end
+
+		if elseword and elseword.string ~= 'else' then
+			ebody = elseword
+		end
+
+		if not body then
+			error('wrong # args: no expression after "if" argument', 0)
+		end
+
 		local result = interp.expr(expr, interp)
 		if result.number ~= 0 then
 			return interp.eval(body)
-		elseif elseword and elseword.string == "else" then
+		elseif ebody then
 			return interp.eval(ebody)
 		else
 			return Value.none
@@ -95,6 +136,21 @@ return {
 			return interp.variables[key.string].value
 		end
 	end,
+	incr = function(interp, key, amount)
+		local dx = amount and amount.number or 1
+
+		if not interp.variables[key.string] then
+			local value = Value:fromNumber(amount)
+			interp.variables[key.string] = {name=key, value=value}
+			return value
+		else
+			local n = interp.variables[key.string].value.number
+			n = n + dx
+			local value = Value.fromNumber(n)
+			interp.variables[key.string].value = value
+			return value
+		end
+	end,
 	unset = function(interp, key) 
 		interp.variables[key.string] = nil
 	end,
@@ -113,10 +169,18 @@ return {
 		elseif var then
 			interp.variables[var.string] = {
 				name=var.string,
-				value=Value.fromStringView(ret, 0, #ret)
+				value=Value.fromString(ret)
 			}
 		end
 		return Value.fromNumber(1)
+	end,
+	llength = function(interp, list)
+		return Value:fromNumber(#list.list)
+	end,
+	string = function(interp, command, ...)
+		local cmd = command.string
+		if not strings[cmd] then error("unknown string command: " .. cmd, 0) end
+		return strings[cmd](interp, ...)
 	end,
 
 	['return'] = function(interp, value)
@@ -125,3 +189,4 @@ return {
 
 	['#'] = function(inter, value) end
 }
+
