@@ -76,22 +76,22 @@ test expr-old-2.8 {floating-point operators} {fails} {expr 36.0/12.0} 3.0
 test expr-old-2.9 {floating-point operators} {fails} {expr 27/4.0} 6.75
 test expr-old-2.10 {floating-point operators} {fails} {expr 2.3+2.1} 4.4
 test expr-old-2.11 {floating-point operators} {fails} {expr 2.3-6.5} -4.2
-test expr-old-2.12 {floating-point operators} {fails} {expr 3.1>2.1} 1
+test expr-old-2.12 {floating-point operators} {expr 3.1>2.1} 1
 test expr-old-2.13 {floating-point operators} {fails} {expr {2.1 > 2.1}} 0
 test expr-old-2.14 {floating-point operators} {fails} {expr 1.23>2.34e+1} 0
 test expr-old-2.15 {floating-point operators} {fails} {expr 3.45<2.34} 0
 test expr-old-2.16 {floating-point operators} {fails} {expr 0.002e3<--200e-2} 0
 test expr-old-2.17 {floating-point operators} {fails} {expr 1.1<2.1} 1
-test expr-old-2.18 {floating-point operators} {fails} {expr 3.1>=2.2} 1
-test expr-old-2.19 {floating-point operators} {fails} {expr 2.345>=2.345} 1
-test expr-old-2.20 {floating-point operators} {fails} {expr 1.1>=2.2} 0
-test expr-old-2.21 {floating-point operators} {fails} {expr 3.0<=2.0} 0
-test expr-old-2.22 {floating-point operators} {fails} {expr 2.2<=2.2} 1
-test expr-old-2.23 {floating-point operators} {fails} {expr 2.2<=2.2001} 1
-test expr-old-2.24 {floating-point operators} {fails} {expr 3.2==2.2} 0
-test expr-old-2.25 {floating-point operators} {fails} {expr 2.2==2.2} 1
-test expr-old-2.26 {floating-point operators} {fails} {expr 3.2!=2.2} 1
-test expr-old-2.27 {floating-point operators} {fails} {expr 2.2!=2.2} 0
+test expr-old-2.18 {floating-point operators} {expr 3.1>=2.2} 1
+test expr-old-2.19 {floating-point operators} {expr 2.345>=2.345} 1
+test expr-old-2.20 {floating-point operators} {expr 1.1>=2.2} 0
+test expr-old-2.21 {floating-point operators} {expr 3.0<=2.0} 0
+test expr-old-2.22 {floating-point operators} {expr 2.2<=2.2} 1
+test expr-old-2.23 {floating-point operators} {expr 2.2<=2.2001} 1
+test expr-old-2.24 {floating-point operators} {expr 3.2==2.2} 0
+test expr-old-2.25 {floating-point operators} {expr 2.2==2.2} 1
+test expr-old-2.26 {floating-point operators} {expr 3.2!=2.2} 1
+test expr-old-2.27 {floating-point operators} {expr 2.2!=2.2} 0
 test expr-old-2.28 {floating-point operators} {fails} {expr 0.0&&0.0} 0
 test expr-old-2.29 {floating-point operators} {fails} {expr 0.0&&1.3} 0
 test expr-old-2.30 {floating-point operators} {fails} {expr 1.3&&0.0} 0
@@ -605,7 +605,8 @@ test expr-old-30.1 {long values} {fails} {
     set a "$a || $a || $a || $a || $a"
     expr {$a}
 } {0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 || 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 || 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 || 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 || 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444 | 0000 1111 2222 3333 4444}
-test expr-old-30.2 {long values} {fails} {
+
+test expr-old-30.2 {long values} {
     set a "000000000000000000000000000000"
     set a "$a$a$a$a$a$a$a$a$a$a$a$a$a$a$a$a${a}5"
     expr $a
@@ -613,7 +614,7 @@ test expr-old-30.2 {long values} {fails} {
 
 # Expressions spanning multiple arguments
 
-test expr-old-31.1 {multiple arguments to expr command} {fails} {
+test expr-old-31.1 {multiple arguments to expr command} {
     expr 4 + ( 6 *12) -3
 } 73
 test expr-old-31.2 {multiple arguments to expr command} {fails} -body {

@@ -7,16 +7,27 @@ local ValueType_RawString = 3
 local ValueType_List = 4
 local ValueType_CommandList = 5
 
-local tokenize = require('ucl/tokenize')
 
 local Scanner = {}
 function Scanner:advance()
+	local a,b = self:peek()
 	self.pos = self.pos + 1
+	return a, b
+end
+function Scanner:peek()
 	if self.pos == self.right + 1 then return '\n', self.pos end
 	if self.pos > self.right + 1 then return nil, self.pos end
 	return self.source:sub(self.pos, self.pos), self.pos
-
 end
+function Scanner:done()
+	return self.pos > self.right + 2
+end
+function Scanner:reverse()
+	self.pos = self.pos - 1
+end
+
+
+
 
 function Value.fromStringView(str, left, right, kind)
 	assert(type(left) == "number")
@@ -60,6 +71,7 @@ end
 Value.metaTable = {
 	__index = function(self, name)
 		if name == 'cmdlist' then
+			local tokenize = require('ucl/tokenize')
 			local list = tokenize(self)
 			self.cmdlist = list
 			return list
@@ -108,10 +120,17 @@ Value.metaTable = {
 					elseif c == 't' then return '\t'
 					elseif c == 'f' then return '\f'
 					elseif c == 'r' then return '\r'
+					elseif c == '\n' then return ' '
 					else return c
 					end
 				end)
-				s = s:gsub("%$([a-zA-Z0-9]+)", function(o)
+				s = s:gsub("%$([a-zA-Z0-9_]+)", function(o)
+					changed = true
+					if not dict[o] then return "?" .. o .. "?" end
+					if not dict[o].value then return "" end
+					return dict[o].value.string
+				end)
+				s = s:gsub("%${([^%]]*)}", function(o)
 					changed = true
 					if not dict[o] then return "?" .. o .. "?" end
 					if not dict[o].value then return "" end
@@ -134,8 +153,8 @@ Value.metaTable = {
 			return function(self)
 				return setmetatable({
 					source = self.string,
-					left = 0,
-					pos = 0,
+					left = 1,
+					pos = 1,
 					right = #self.string
 				}, {__index=Scanner})
 			end

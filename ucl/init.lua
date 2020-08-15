@@ -1,7 +1,7 @@
 
 setmetatable(_G, {
-	__newindex = function(g, name) assert("No such global:" .. name) end,
-	index = function(g, name) assert("No such global:" .. name) end,
+	__newindex = function(g, name) error("No such global:" .. name) end,
+	index = function(g, name) error("No such global:" .. name) end,
 })
 
 local Value = require('ucl/value')

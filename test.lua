@@ -2,6 +2,7 @@ local ucl = require 'ucl'
 local pass = 0
 local fail = 0
 local skip = 0
+local badfails = 0
 local fails = {}
 
 local colors = {
@@ -40,8 +41,14 @@ local test = function(interp, name, desc, filter, code, expected)
 			filter = nil
 		end
 
+		if not expected then
+			code, expected = desc, code
+		end
+
+		local shouldFail = false
+
 		local line = name.string .. ' ' .. desc.string
-		if arg[1] ~= nil and not string.find(line, arg[1]) then
+		if arg[1] ~= nil and not string.find(line, arg[1], 1, true) then
 			return
 		end
 
@@ -51,23 +58,36 @@ local test = function(interp, name, desc, filter, code, expected)
 			return
 		end
 
+		if filter and (filter.string == "fails") then
+			skip = skip + 1
+			shouldFail = true
+		end
+
 		local ok, result = pcall(interp.eval, code.string)
 		
 
 		if ok and not result then
+			if shouldFail then return end
 			fail = fail + 1
 			cprint('red', "    " .. fail .. ") " .. line)
 			fails[fail] = {name = line, error="No result"}
 		elseif result.string == expected.string then
+			if shouldFail then 
+				cwrite('yellow', "    ? ")
+				print(line)
+				badfails = badfails + 1
+				return
+			end
 			cwrite('green', "    ✓ ")
 			print(line)
 			pass = pass + 1
 		elseif not ok then
+			if shouldFail then return end
 			fail = fail + 1	
 			cprint('red', "    " .. fail .. ") " .. line)
 			fails[fail] = {name = line, error=result}
-
 		else
+			if shouldFail then return end
 			fail = fail + 1
 			cprint('red',"    " .. fail .. ") " .. line)
 			fails[fail] = {name = line, error = "got " .. encode(result.string) .. " expected " .. encode(expected.string)}
@@ -78,16 +98,32 @@ local i = ucl.new()
 i.commands.test = test
 i.commands.bytestring = function(interp, v) return v end
 
-local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format('tests'), 'r'))
-local list = pfile:read('*a')
-pfile:close()
-for filename in list:gmatch('[^%z]+') do
+if not io.glob then 
+	io.glob = function(dir, match)
+		local result = {}
+		local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format(dir), 'r'))
+		local list = pfile:read('*a')
+		pfile:close()
+		for filename in list:gmatch('[^%z]+') do
+			if filename:match(match) then table.insert(result, filename) end
+		end
+		return result
+	end
+end
+
+local testFiles = io.glob("tests", ".")
+
+-- testFiles = {"tests/misc.ucl"}
+
+for k,filename in ipairs(testFiles) do
     local h = assert(io.open(filename, 'r'))
     print()
     print(filename)
     local code = h:read('*a')
     h:close()
-    local ok, err = xpcall(i.eval, debug.traceback, i, code)
+    local ok, err = xpcall(function()
+    	return i:eval(code)
+    end, debug.traceback)
     if not ok then
     	cprint('red', err)
     end
@@ -100,6 +136,9 @@ print()
 cprint('green', "  " .. pass .. " passing")
 cprint('red', "  " .. fail .. " failing")
 cprint('cyan', "  " .. skip .. " skipped")
+if badfails > 0 then
+	cprint('yellow', "  " .. badfails .. " failing tests now passing :)")
+end
 print()
 for k,v in pairs(fails) do
 	print(' ' .. k .. ') ' .. v.name)
@@ -107,5 +146,9 @@ for k,v in pairs(fails) do
 	print()
 end
 
-print(arg[1])
+if fail == 0 then
+	os.exit(0)
+else
+	os.exit(1)
+end
 

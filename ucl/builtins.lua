@@ -42,6 +42,7 @@ return {
 
 	eval = function(interp, ...)
 		local va = {...}
+
 		if #va == 0 then
 			error('wrong # args: should be "eval arg ?arg ...?"', 0)
 		end

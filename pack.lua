@@ -1,43 +1,97 @@
-local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format('ucl'), 'r'))
-local list = pfile:read('*a')
-local out = io.open("out.lua", "w")
+local out = io.open(arg[1] or "out.lua", "w")
 
 out:write([[
 
+--
+--                                
+--                _|_|_|    _|        
+--  _|    _|    _|          _|        
+--  _|    _|    _|          _|        
+--  _|    _|    _|          _|        
+--    _|_|_|      _|_|_|    _|_|_|_|  
+--        _|                     
+--        _|_|  Micro Command Language                     
+--
+--
+
 local packages = {}
 local loaded = {}
+local iofill = {}
+local files = {}
+
+iofill.write = io.write
+iofill.glob = function(where, pattern)
+	local results = {}
+	for k,v in pairs(files) do
+		if k:match(pattern) then table.insert(results, k) end
+	end
+	return results
+end
+
+iofill.open = function(name) return {
+	read = function(self, w) 
+		assert(w == "*a")
+		return files[name]
+	end,
+	close = function(seld) end
+} end
+
 local function req(file)
 	if not loaded[file] then
-		if not packages[file] then error("Unknown packages " .. file) end
-		loaded[file] = packages[file](req)
+		if not packages[file] then error("Unknown package " .. file) end
+		loaded[file] = packages[file](req, iofill)
 	end
 	return loaded[file]
 end
 
-]])
+	]])
 
-pfile:close()
 
 local function include(filename)
 	local h = assert(io.open(filename, 'r'))
-    print()
-    print(filename)
-    print(code)
-    local code = h:read('*a')
-    local moduleName = filename:gsub(".lua$", ""):gsub("/init", "")
-    out:write("packages['" .. moduleName .. "'] = (function(require) ")
-    out:write(code)
-    out:write("\nend)\n\n")
-    h:close()
+	print(filename)
+	local code = h:read('*a')
+	local moduleName = filename:gsub(".lua$", ""):gsub("/init", "")
+	loadstring(code) -- Make sure it compiles
+	out:write("packages['" .. moduleName .. "'] = (function(require, io) ")
+	out:write(code)
+	out:write("\nend)\n\n")
+	h:close()
 end
 
-for filename in list:gmatch('[^%z]+') do
-    include(filename)
+local function glob(dir)
+	local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format(dir), 'r'))
+	local list = pfile:read('*a')
+	pfile:close()
+	return list:gmatch('[^%z]+')
 end
 
-include("main.lua")
+for filename in glob('ucl') do
+	include(filename)
+end
+
+for filename in glob('tests') do
+	local h = io.open(filename, 'r')
+	out:write('files["' .. filename .. '"] = [==[')
+	out:write(h:read("*all")) 
+	out:write(' ]==]\n')
+	h:close()
+end
+
+
+
+include("test.lua")
+include("repl.lua")
 
 out:write([[
-	require.preload.ucl = function() return req('ucl') end
-	--req("main")
-]])
+
+	if getfenv and arg and not pcall(getfenv, 4) then
+		if arg[1] == "test" then
+			table.remove(arg, 1)
+			req('test')
+		else
+			req('repl')
+		end
+	end
+	return req('ucl')
+	]])

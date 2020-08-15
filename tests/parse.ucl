@@ -116,22 +116,22 @@ test parseOld-4.4 {command substitution} {fails} {
 
 # Variable substitution.
 
-test parseOld-5.1 {variable substitution} {fails} {
+test parseOld-5.1 {variable substitution} {
     set a 123
     set b $a
     set b
 } 123
-test parseOld-5.2 {variable substitution} {fails} {
+test parseOld-5.2 {variable substitution} {
     set a 345
     set b x$a.b
     set b
 } x345.b
-test parseOld-5.3 {variable substitution} {fails} {
+test parseOld-5.3 {variable substitution} {
     set _123z xx
     set b $_123z^
     set b
 } xx^
-test parseOld-5.4 {variable substitution} {fails} {
+test parseOld-5.4 {variable substitution} {
     set a 78
     set b a${a}b
     set b
@@ -195,15 +195,15 @@ test parseOld-5.14 {array variable substitution} {fails} {
 } bar
 unset -nocomplain a a1
 
-test parseOld-7.1 {backslash substitution} {fails} {
+test parseOld-7.1 {backslash substitution} {
     set a "\a\c\n\]\}"
     string length $a
 } 5
-test parseOld-7.2 {backslash substitution} {fails} {
+test parseOld-7.2 {backslash substitution} {
     set a {\a\c\n\]\}}
     string length $a
 } 10
-test parseOld-7.3 {backslash substitution} {fails} {
+test parseOld-7.3 {backslash substitution} {
     set a "abc\
 def"
     set a

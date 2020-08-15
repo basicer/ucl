@@ -1,5 +1,7 @@
+local Value = require 'ucl/value'
+
 local ops = {
-	['**'] = { pres = 14, apply = function(a,b) return math.pow(a.number,b.number) end },
+	['**'] = { pres = 14, apply = function(a,b) return math.pow(a,b) end },
 
 	['*']  = { pres = 13, apply = function(a,b) return a * b end },
 	['/']  = { pres = 13, apply = function(a,b) return a / b end },
@@ -8,8 +10,8 @@ local ops = {
 	['+']  = { pres = 12, apply = function(a,b) return a + b end },
 	['-']  = { pres = 12, apply = function(a,b) return a - b end },
 	
-	['<<'] = { pres = 11, apply = function(a,b) return bit.lshift(a.number,b.number) end },
-	['>>'] = { pres = 11, apply = function(a,b) return bit.rshift(a.number,b.number) end },
+	['<<'] = { pres = 11, apply = function(a,b) return bit.lshift(a,b) end },
+	['>>'] = { pres = 11, apply = function(a,b) return bit.arshift(a,b) end },
 
 	['>']  = { pres = 10, apply = function(a,b) return a > b and 1 or 0 end },
 	['<']  = { pres = 10, apply = function(a,b) return a < b and 1 or 0 end },
@@ -38,9 +40,15 @@ local function climber(tokens, max)
 		local sub, reason = climber(tokens, 0)
 		if reason ~= ')' then error("Unbalanced parens", 0) end
 		acc = tonumber(sub)
+	elseif t == '-' then
+	 	acc = 0 - climber(tokens, 10000)
+	elseif t == '+' then
+		acc = climber(tokens, 10000)
 	else
 		acc = tonumber(t)
 	end
+
+	if max == 10000 then return acc end
 
 
 	while not tokens.done() do
@@ -81,8 +89,10 @@ local function expr(code, state)
 			i = sb + 1
 		end
 
+		if not a then a,b = code:find('^0x[0-9A-Fa-f]+', i) end
+		if not a then a,b = code:find('^[0-9]+%.[0-9]*', i) end
 		if not a then a,b = code:find('^[0-9]+', i) end
-		if not a then a,b = code:find('^[!+-%*/<>=()%%][<>=]?', i) end
+		if not a then a,b = code:find('^[!+%-%*/<>=()%%][<>=]?', i) end
 		if not a then a,b = code:find('^[^%s]+', i) end
 
 		if a then
@@ -92,7 +102,7 @@ local function expr(code, state)
 
 	end
 
-	--print(table.concat(tokens, ','))
+	-- print('P', table.concat(tokens, ','))
 
 	local idx = 1
 	local tokens = {
