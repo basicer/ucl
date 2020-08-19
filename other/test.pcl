@@ -1,0 +1,1480 @@
+#! /usr/bin/env picolsh
+# test.pcl - A test suite for the Picol interpreter
+# with many extensions by suchenwi and dbohdan. Call with "-l" to display all
+# test cases. Is this comment extended? \
+Yes, it is.
+set patchlevel 0.4.0
+set thisfile [info script]
+set tcl tclsh ;# The Tcl 8.x interpreter binary.
+
+set test_config(picol) 0
+set test_config(arrays) 0
+set test_config(picol) 0
+set test_config(unix) 0
+set test_config(io) 0
+set test_config(glob) 0
+set test_config(interp) 0
+set test_config(tcl85) 0
+set test_config(regexp) 0
+
+set tcl_platform(platform) lua
+
+#--------------------------------------------- minimal testing "framework"
+proc test {name cmd arrow expected} {
+    incr ::n
+
+    catch $cmd res
+
+    lassign [switch A$arrow A-> {
+        list [string equal $expected $res] exact
+    } A->* {
+        list [string match $expected $res] glob
+    } A->$ {
+        list [regexp $expected $res] regexp
+    } default {
+        error [list unknown arrow: $arrow]
+    }] match mode
+
+    if {!$match} {
+        puts "\n>>>>> $name failed: [list $cmd]"
+        puts "      got: $res"
+        puts " expected: $expected"
+        puts "     mode: $mode"
+        incr ::r
+    } else {
+        puts ">>>>> $name PASS"
+    }
+}
+
+# if $test_config(picol) {test version {info pa} -> $patchlevel}
+puts "[info script] [info patchlevel], $argv0, argv:<$argv>,argc:$argc"
+
+test parser.1   {set a 5} -> 5
+test parser.2   {set a [} -> {missing close-bracket}
+# test parser.3   {set a [][} -> {missing close-bracket}
+test parser.4   {set a [[} -> {missing close-bracket}
+test parser.5   {set a [\{} -> {missing close-bracket}
+
+test +.1        {+ 3 4}   -> 7
+test +.2        {+ 3 4 5} -> 12
+test +.3        {+ 3}     -> 3
+test +.4         +        -> 0
+test *.1        {* 3 4}   -> 12
+test *.2        {* 3 4 5} -> 60
+if {$test_config(picol)} {
+    test **.1 {** 2 4}  -> 16
+    test **.2 {** 47 0} ->  1
+}
+test -.1        {- 42 20} -> 22
+test -.2        {- 42 0}  -> 42
+test -.3        {set x 5; - $x} -> -5
+if $test_config(picol) {test &&.1  {&&} -> 1}
+test &&.2       {&& 1 1 1} -> 1
+test &&.3       {&& 1 0 1 1} -> 0
+test &&.4       {&& 0 0 0} -> 0
+if $test_config(picol) {test ||.1 {||} -> 0}
+test ||.2       {|| 1 1} -> 1
+test ||.3       {|| 1 0} -> 1
+test ||.4       {|| 0 0} -> 0
+test %          {% 47 2} -> 1
+test <.1        {< 1 0}  -> 0
+test <.2        {< 1 1}  -> 0
+test <.3        {< 1 2}  -> 1
+test <=.1       {<= 1 2} -> 1
+test <=.2       {<= 2 2} -> 1
+test <=.3       {<= 3 2} -> 0
+
+test &.1        {& 0 0} -> 0
+test &.2        {& 0 1} -> 0
+test &.3        {& 255 15} -> 15
+test &.4        {& 255 15 3} -> 3
+if {$test_config(picol)} {
+    test &.5        {&} -> 2147483647
+}
+test |.1        {| 0 0} -> 0
+test |.2        {| 0 1} -> 1
+test |.3        {| 255 15} -> 255
+test |.4        {| 1 2 4} -> 7
+if {$test_config(picol)} {
+    test |.5        {|} -> 0
+}
+test ^.1        {^ 0 0} -> 0
+test ^.2        {^ 0 1} -> 1
+test ^.3        {^ 255 15} -> 240
+test ^.4        {^ 1 2 4} -> 7
+if {$test_config(picol)} {
+    test ^.5        {^} -> 0
+}
+test <<.1       {<< 0 0} -> 0
+test <<.2       {<< 0 1} -> 0
+test <<.3       {<< 1 0} -> 1
+test <<.4       {<< 1 1} -> 2
+test <<.5       {<< 1 5} -> 32
+if {$test_config(picol)} {
+    test <<.6 {
+        << 1 99
+    } ->* {can't shift integer left by more than ?? bit(s) (99 given)}
+}
+test >>.1       {>> 0 0} -> 0
+test >>.2       {>> 0 1} -> 0
+test >>.3       {>> 1 0} -> 1
+test >>.4       {>> 32 3} -> 4
+test >>.5       {>> 65536 3} -> 8192
+test ~.1        {~ 0} -> -1
+test ~.2        {~ 1234} -> -1235
+test ~.3        {~ -9876} -> 9875
+
+test abs.1      {abs -47} -> 47
+test abs.2      {abs 0}   -> 0
+test abs.3      {abs 48}  -> 48
+
+test after.1    {after 100} -> {}
+
+test append.0   {catch append res; lrange $res 0 2} -> {wrong # args:}
+test append.1   {set foo hello; append foo world} -> helloworld
+test append.2   {set foo 47;append foo 11;set foo} -> 4711
+test append.3   {append bar grill} -> grill
+
+if $test_config(picol) {
+   test apply.1    {apply {{a b} {* $a $b}} 6 7} -> 42
+   test apply.2    {apply {{} {return hello}}} -> hello
+   test apply.3    {set sum {{a b} {+ $a $b}}; apply $sum 17 18} -> 35
+}
+test argv0.1 {
+    puts [list argv0 $::argv0 script [info script]]
+    string equal $::argv0 [info script]
+} -> 1
+
+if {$test_config(arrays)} {
+    test array.1    {array exists a} -> 0
+    test array.2    {array set a {foo 42}; array exists a}      -> 1
+    test array.3    {array set a {foo 42 bar 11}; array size a} -> 2
+    test array.4    {array set a {foo 42 bar 11 fx 0}; lsort [array names a f*]} -> {foo fx}
+    test array.5    {array set a {foo 42 bar 11 grill 0}; lsort [array names a]} -> {bar foo grill}
+    test array.6    {array set a {foo 42 bar 11 grill 0}; set a(bar)} -> 11
+    test array.7    {array set a {foo 42 bar 11 grill 0}; catch {set a(bar)}} -> 0
+    test array.8    {array set a {foo 42 bar 11 grill 0}; catch {set a(baz)}} -> 1
+    test array.9    {array set a {foo 42 bar 11 grill 0}; set i $a(foo)} -> 42
+    test array.10   {array set a {foo 42 bar 11 grill 0}; set key foo; set a($key)} -> 42
+    test array.11   {set a(1) hello; set a(2) world; lsort [array get a]} -> {1 2 hello world}
+    test array.12   {set a(1) x;set a(2) y;set a(1) z;list $a(1) $a(2)} -> {z y}
+    test array.13   {set (foo) bar; array get ""}      -> {foo bar}
+    test array.14   {set (1) a; set (2) $(1); set (2)} -> a
+    test array.15   {set (1) b; set k 1; set (2) [set ($k)]; set (2)} -> b
+    test array.16   {set a 12345678; array exists a} -> 0
+    test array.17   {set a 12345678; array get a} -> {}
+    test array.18   {set a 12345678; array set a {k v}} -> {can't set "a(k)": variable isn't array}
+    test array.19   {array statistics blah} -> {"blah" isn't an array}
+    test array.20   {set a 12345678; array statistics a} -> {"a" isn't an array}
+    test array.21   {lset a(5) 0 value} -> {can't read "a(5)": no such variable}
+    test array.22   {set a 12345678; lassign {a b c} a(foo) a(bar) a(baz)} -> {can't set "a(foo)": variable isn't array}
+    test array.23   {set a 12345678; lassign {} a(foo) a(bar) a(baz)} -> {can't set "a(foo)": variable isn't array}
+    test array.24   {set a 12345678; append a(foo) yo} -> {can't set "a(foo)": variable isn't array}
+    if {!$test_config(tcl85)} {
+        test array.25   {set a 12345678; try {error KABOOM} on error a(foo) {}} -> {can't set "a(foo)": variable isn't array}
+        test array.26   {set a 12345678; catch {error BLAM} a(foo)} -> {can't set "a(foo)": variable isn't array}
+        test array.27   {set a 12345678; lmap a(foo) a {}} -> {can't set "a(foo)": variable isn't array}
+    }
+    test array.28   {set a 12345678; lappend a(foo) a} -> {can't set "a(foo)": variable isn't array}
+    test array.29   {set a 12345678; set a(5) 99} -> {can't set "a(5)": variable isn't array}
+    test array.30   {set a(0)} -> {can't read "a(0)": no such variable}
+    test array.31   {set a(k1) v1; set a(k2) v2; unset a(k1); array get a} -> {k2 v2}
+    test array.32   {set a(k1) v1; set a(k2) v2; unset a(k2); array get a} -> {k1 v1}
+    test array.33   {set a(5) 0; unset a(5); array get a} -> {}
+    test array.34   {set a(5) 0; unset a(7)} -> {can't unset "a(7)": no such element in array}
+    test array.35   {unset a(5)} -> {can't unset "a(5)": no such variable}
+    test array.36   {array set a {k1 v1 k2 v2 k3 v3}; unset a; array statistics a} -> {"a" isn't an array}
+    test array.37   {set a(5) hello; set a(5) hi; set a(5)} -> {hi}
+    # A workaround for Tcl 8.6: throw a more specific error in this case
+    # ('can't read "a(0)": variable isn't array').
+    test array.37   {
+        set a 12345678
+        set a(0)
+    } ->* {can't read "a(0)":*}
+    test array.38   {
+        set a 12345678
+        lindex $a(5)
+    } ->* {can't read "a(5)":*}
+    test array.39   {
+        set a 12345678
+        lset a(5) 0 value
+    } ->* {can't read "a(5)":*}
+    test array.40   {
+        proc array.40 {} { set a(k) 5 }
+        array.40
+        rename array.40 {}
+        set a(k)
+    } -> {can't read "a(k)": no such variable}
+    test array.41   {
+        proc array.41.foo {} { set a(k) 5; array.41.bar }
+        proc array.41.bar {} { return $a(k) }
+
+        catch array.41.foo res
+
+        rename array.41.foo {}
+        rename array.41.bar {}
+
+        lindex $res
+    } -> {can't read "a(k)": no such variable}
+    test array.42   {
+        proc array.42.foo {} { set ::a42(k) 5; array.42.bar }
+        proc array.42.bar {} { return $::a42(k) }
+
+        set res [array.42.foo]
+
+        rename array.42.foo {}
+        rename array.42.bar {}
+        unset ::a42
+
+        lindex $res
+    } -> 5
+    test array.43   {
+        set n 100
+        for {set i 0} {$i < $n} {incr i} {
+            set arr(k$i) 1
+        }
+        for {set i 0} {$i < $n} {incr i} {
+            set arr(k$i) 2
+        }
+        lsort -unique [array get arr]
+    } ->* {2 k*}
+    test array.44   {
+        set n 100
+        for {set i 0} {$i < $n} {incr i} {
+            set arr($i) value
+        }
+        unset arr(xx)
+    } -> {can't unset "arr(xx)": no such element in array}
+    test array.45   {
+        set n 100
+        for {set i 0} {$i < $n} {incr i} {
+            set ::arr($i) value
+        }
+        for {set i [expr {$n - 1}]} {$i >= 0} {incr i -1} {
+            unset ::arr($i)
+        }
+
+        set res [array get ::arr]
+        unset ::arr
+        lindex $res
+    } -> {}
+    test array.46   {
+        set n 100
+        for {set i 0} {$i < $n} {incr i} {
+            set arr($i) value
+        }
+        for {set i 0} {$i < $n} {incr i} {
+            unset arr($i)
+        }
+    } -> {}
+    test array.47   {
+        set arr(k) v
+        set ::arr(k)
+    } -> {can't read "::arr(k)": no such variable}
+    test array.48   {
+        set arr(k) 1
+        set ::arr(k) 2
+        set res $arr(k)
+        unset ::arr
+        return $res
+    } -> 1
+    test array.49   {
+        info exists arr([string repeat 1 1000])
+    } -> 0
+    test array.50   {
+        set arr(x) y
+        info exists arr([string repeat 1 100])
+    } -> 0
+
+#   test array.xx   {set ::a 12345678; proc f ::a(foo) {}; f x} -> {can't set "a(foo)": variable isn't array}
+}
+
+test catch.1    {catch {* 6 7}} -> 0
+test catch.2    {catch {/ 1 0}} -> 1
+test catch.3    {/ 1 0} -> "divide by zero"
+if $test_config(picol) {
+    test catch.4 {catch {+ a b} res;set res} -> {expected integer but got "a"}
+}
+test catch.5    {% 1 0} -> "divide by zero"
+
+
+test concat.1   concat      -> ""
+test concat.2   {concat it} -> it
+test concat.3   {concat one two three}   -> {one two three}
+test concat.4   {concat one {two three}} -> {one two three}
+test concat.5   {concat {1 2} {3 4}}     -> {1 2 3 4}
+test concat.6   {concat {} {}}           -> ""
+test concat.7   {concat foo {} bar}      -> {foo bar}
+
+if {$test_config(picol)} {
+    test debug.1 {debug 0} -> 0
+    test debug.2 {debug}   -> 0
+    test debug.3 {set res {}; lappend res [debug 1] [debug] [debug 0]; } -> {1 1 0}
+}
+
+if {$test_config(arrays)} {
+    test env.1       {catch {set ::env(PICOL)}}   -> 1
+    test env.2       {set ::env(PICOL) world}     -> world
+    test env.3       {set env(PICOL) blah}        -> blah
+    test env.4       {set ::env(PICOL)}           -> world
+    if {$test_config(picol)} {
+        test env.5   {array names ::env}          -> PICOL
+        # Do not return the value of the corresponding environment variable
+        # when a key is missing in an array that is not ::env.
+        test env.6   {array set ::a {}; catch {set b $::a(PATH)}}  -> 1
+        test env.7   {catch {set b $env(FOO))}}   -> 1
+        # Do not populate ::env when other arrays are accessed.
+        test env.8   {array names ::env}          -> PICOL
+        test env.9   {catch {set b $::env(FOO))}} -> 1
+        test env.10  {array names ::env}          -> PICOL
+    }
+    test env.11.1    {info exists ::env(PATH)}            -> 1 ;# should be there
+    test env.11.2    {uplevel #0 {info exists env(PATH)}} -> 1
+    test env.11.3    {apply {{} {info exists env(PATH)}}} -> 0
+    test env.12      {info exists ::env(HTAP)}            -> 0
+}
+
+
+test escape.1    {set f hello\x41world} -> helloAworld
+test escape.2    {set f {hello\x41world}} -> hello\\x41world
+test eval.1      {set a {\t}; eval [list set b $a]} -> {\t}
+test eval_mul.1  {eval * 8 7} -> 56
+test eval_mul.2  {eval {* 4 5}} -> 20
+
+if {$test_config(io)} {
+    test exec.1  {catch {exec ThisDoesNotExist}} -> 1
+    if {$test_config(unix)} {
+        test exec.2  {exec echo {Hello, World!}} -> {Hello, World!}
+        test exec.3  {exec echo {He said, "She said, 'Hello!'"}} -> {He said, "She said, 'Hello!'"}
+    }
+    if {$test_config(windows)} {
+        test exec.4  {exec cmd.exe /c echo Hello, World!} -> {Hello, World!}
+        test exec.5  {exec picolsh.exe qargv.pcl a b c} -> {{a b c}}
+        test exec.6  {exec picolsh.exe qargv.pcl {a b c}} -> {{{a b c}}}
+        test exec.7  {exec cmd.exe /c echo {Hello, World!}} -> {"Hello, World!"}
+        test exec.8  {exec picolsh.exe qargv.pcl {He said, "She said, 'Hello!'"}} -> \
+                {{{He said, "She said, 'Hello!'"}}}
+        test exec.9  {exec picolsh.exe qargv.pcl \
+                {They said, 'Hello!'} {"Hasta la vista, baby!"} Tab\ttab} -> \
+                [list [list {They said, 'Hello!'} {"Hasta la vista, baby!"} Tab\ttab]]
+        test exec.10 {exec picolsh.exe qargv.pcl &whoami} -> &whoami
+        test exec.11 {exec picolsh.exe qargv.pcl {\n} {\\\n} {\"}} -> {{{\n} {\\\n} {\"}}}
+        if {$test_config(picol)} {
+            test exec.12 {exec cmd.exe /c echo {\n} {\\\n} {\"}} -> {\n \\\n "\\\""}
+        }
+    }
+
+    if {$test_config(picol)} {
+        if {$test_config(unix)} {
+            test rawexec.1 {rawexec {echo "Hello, World!"}} -> {Hello, World!}
+            test rawexec.2 {rawexec echo {"Hello, World!"}} -> {Hello, World!}
+        } elseif {$test_config(windows)} {
+            test rawexec.3 {rawexec {echo "Hello, World!"}} -> {"Hello, World!"}
+            test rawexec.4 {rawexec echo {"Hello, World!"}} -> {"Hello, World!"}
+        }
+    }
+}
+
+test exit.1 {exit eh} -> {expected integer but got "eh"}
+
+test expand.0 {{*}{}} -> {} ;# empty command
+test expand.1 {list a {*}[list b c d] e} -> {a b c d e}
+test expand.2 {list a {*}[list b c d]}   -> {a b c d}
+test expand.2a {list a {*}{b c d} e}    -> {a b c d e}
+test expand.3 {list {*}[list b c d] e}   -> {b c d e}
+test expand.4 {list a {*}[list b {c x y} d] e} -> {a b {c x y} d e}
+test expand.5 {set x {f g h}; list a {*}$x i}  -> {a f g h i}
+test expand.6 {list a {*}{} b}     -> {a b}
+test expand.7 {list a {*}[list] b} -> {a b}
+test expand.8 {list a {*}b c}      -> {a b c}
+test expand.9 {{*}{set x 45}} -> 45
+test expand.10 {{*}[list set x 47]} -> 47
+
+test expr.1     {expr 3 + 4}           -> 7
+test expr.2     {set x 5; expr $x * 4} -> 20
+test expr.3     {expr 3 + 4 + 5}       -> 12
+test expr.4     {expr {3 + 4 + 7}}     -> 14
+test expr.5     {set x 8; expr {3 + 4 + $x}} -> 15
+test expr.6     {expr 42} -> 42
+test expr.7     {expr 0x00 + 0} -> 0
+test expr.8     {expr 0xFF + 0} -> 255
+test expr.9     {expr 0xab + 0} -> 171
+test expr.10    {expr 0x01 + 0x02} -> 3
+test expr.11    {expr 0x15 + 1} -> 22
+test expr.12    {expr 0b1000 + 0b0111} -> 15
+test expr.13    {expr 0o777 + 1} -> 512
+test expr.14    {expr -0xFF + 0} -> -255
+test expr.15    {expr -0xFF + 0} -> -255
+test expr.16    {expr -0b1011 + 0} -> -11
+test expr.17    {expr -0x122 + 0} -> -290
+if {$test_config(picol)} {
+    test expr.18    {expr 0abcdef + 0} -> {expected integer but got "0abcdef"}
+    test expr.19    {expr 0xZZZ + 0} -> {expected integer but got "0xZZZ"}
+    test expr.20    {expr 0o9 + 0} -> {expected integer but got "0o9"}
+    test expr.21    {expr 0b00103 + 0} -> {expected integer but got "0b00103"}
+    test expr.22    {expr 0000255 + 0} -> 255
+    test expr.23    {expr -0000255 + 0} -> -255
+}
+
+test fac.1      {proc fac x {if [< $x 2] {return $x} else {* $x [fac [- $x 1]]}}; fac 5} -> 120
+test fac.1a     {proc fac x {if {$x < 2} {set x} else {* $x [fac [- $x 1]]}}; fac 6} -> 720
+test fac.2      {fac 10} -> 3628800
+if {$test_config(picol)} {
+    test fac.3      {
+        proc fac x {
+            try {
+                if {$x <= 1} {
+                    return 1
+                } else {
+                    apply {y {% [* $y [fac [- $y 1]]] 0xFFFF}} $x
+                }
+            }
+        }
+        fac 99
+    } -> {too many nested evaluations (infinite loop?)}
+}
+
+if {$test_config(io)} {
+    test file.ex.1  {file exists test.pcl} -> 1
+    test file.ex.2  {file exists does.not} -> 0
+    test file.ex.3  {file exists {globtest/test1}}     -> 1
+    test file.ex.4  {file exists {globtest/foo bar}}   -> 1
+    test file.ex.5  {file exists {./globtest/foo bar}} -> 1
+    if {$test_config(windows)} {
+        test file.ex.6  {file exists {globtest\test1}}     ->  1
+        test file.ex.7  {file exists {globtest\foo bar}}   ->  1
+        test file.ex.8  {file exists {.\globtest\foo bar}} ->  1
+    }
+
+    test file.isdir.1  {file isdirectory test.pcl} -> 0
+    test file.isdir.2  {file isdirectory globtest} -> 1
+    test file.isdir.3  {file isdirectory no_such_thing} -> 0
+    test file.isdir.4  {file isdir globtest} -> 1
+    test file.isdir.5  {file isdir no_such_thing} -> 0
+    test file.isfile.1 {file isfile test.pcl} -> 1
+    test file.isfile.2 {file isfile globtest} -> 0
+    test file.isfile.3 {file isfile no_such_thing} -> 0
+
+    if {[file isfile directory/file]} {
+        file delete directory/file
+    }
+    if {[file isdir directory]} {
+        file delete directory
+    }
+    test file.delete.1 {file delete no_such_thing} -> {} ;# No error.
+    test file.delete.2 {
+        close [open disposable w]
+        file delete disposable
+    } -> {}
+    if {$test_config(unix)} {
+        test file.delete.3 {
+            file delete /dev/null/blah
+        } ->* {error deleting "/dev/null/blah"*}
+    }
+    test file.delete.4 {
+        set exists [file isdir directory]
+        if {$::test_config(windows)} {
+            catch {exec cmd.exe /c mkdir directory}
+        } else {
+            catch {exec mkdir directory}
+        }
+        lappend exists [file isdir directory]
+        file delete directory
+        lappend exists [file isdir directory]
+    } -> {0 1 0}
+    test file.delete.5 {
+        set exists [file exists directory/file]
+        if {$::test_config(windows)} {
+            catch {exec cmd.exe /c mkdir directory}
+        } else {
+            catch {exec mkdir directory}
+        }
+        close [open directory/file w]
+        lappend exists [catch {file delete directory}]
+        lappend exists [file exists directory/file]
+        file delete directory/file
+        # The following works around a heisenbug on Windows.
+        for {set i 0} {[file exists directory/file]} {incr i} {
+            if {$i > 100} break
+            after 10
+        }
+        file delete directory
+        lappend exists [file exists directory/file]
+        set exists
+    } -> {0 1 1 0}
+
+    test file.1     {set f [open t.t w];puts $f hello;set x [tell $f];close $f; set x
+                        } -> $test_config(hello_file_length)
+    test file.2     {set f [open t.t]; gets $f l; close $f; set l} -> hello
+    test file.3     {file size t.t} -> $test_config(hello_file_length)
+    test file.4     {
+        set f [open t.t]
+        set l [string trimright [read $f] \r\n]
+        close $f
+        set l
+    } -> hello
+    test file.5     {
+        read 12345678
+    } -> {can not find channel named "12345678"}
+    test file.6     {
+        gets 12345678
+    } -> {can not find channel named "12345678"}
+    test file.7     {
+        set f [open t.t]
+        close $f
+        catch {read $f} err
+        lrange $err 0 4
+    } -> {can not find channel named}
+    test file.8     {
+        set f [open t.t]
+        close $f
+        catch {close $f} err
+        lrange $err 0 4
+    } -> {can not find channel named}
+    if {$test_config(picol)} {
+        test file.9     {
+            set f [open picol.h rb]
+            set res [lindex [read $f $::tcl_platform(maxLength)] 1]
+            close $f
+            set res
+        } -> Tcl
+        test file.10    {
+            set f [open picol.h rb]
+            catch {read $f} res
+            close $f
+            set res
+        } -> {read contents too long}
+        test file.11    {
+            set f [open picol.h rb]
+            catch [list read $f [expr {$::tcl_platform(maxLength) + 1}]] res
+            close $f
+            set res
+        } -> [list size [expr {$::tcl_platform(maxLength) + 1}] too large]
+    }
+}
+test file.12.1  {file dirname /foo/bar/grill.txt} -> /foo/bar
+test file.12.2  {file dirname /foo/bar/baz/}      -> /foo/bar
+test file.12.3  {file dirname /foo/bar/baz///}    -> /foo/bar
+test file.12.4  {file dirname /foo/bar/baz///qux} -> /foo/bar/baz
+test file.12.5  {file dirname foo/bar/grill.txt}  -> foo/bar
+test file.12.6  {file dirname foo/bar/baz/}       -> foo/bar
+test file.12.7  {file dirname {}}   -> .
+test file.12.8  {file dirname /}    -> /
+test file.12.9  {file dirname ///}  -> /
+
+test file.13.1  {file tail /foo/bar/grill.txt}  -> grill.txt
+test file.13.2  {file tail /foo/bar/baz/}       -> baz
+test file.13.3  {file tail /foo/bar/baz///}     -> baz
+test file.13.4  {file dirname /foo/bar/baz///qux} -> /foo/bar/baz
+test file.13.5  {file tail foo/bar/grill.txt}   -> grill.txt
+test file.13.6  {file tail foo/bar/baz/}        -> baz
+test file.13.7  {file tail {}}   -> {}
+test file.13.8  {file tail /}    -> {}
+test file.13.9  {file tail ///}  -> {}
+
+test file.14    {file join foo}              -> foo
+test file.15    {file join foo bar}          -> foo/bar
+test file.16    {file join foo /bar}         -> /bar
+if {$tcl_platform(platform) eq {windows}} {
+    test file.17    {file join foo C:/bar grill} -> C:/bar/grill
+}
+test file.18    {file split {/foo/space station/bar}} -> {/ foo {space station} bar}
+test file.19    {file split {/foo/space station/bar/}} -> {/ foo {space station} bar}
+test file.20    {file split {foo/space station/bar}} -> {foo {space station} bar}
+test file.21    {file split foo///bar} -> {foo bar}
+test file.22    {file split foo} -> foo
+test file.23    {file split {/foo/bar///baz}} -> {/ foo bar baz}
+test file.24    {file split {///foo/bar/baz}} -> {/ foo bar baz}
+test file.25    {file split ~foo}             -> ~foo
+test file.26    {file split ~~~foo}           -> ~~~foo
+test file.27    {file split /foo/~bar/baz}    -> {/ foo ./~bar baz}
+test file.28    {file split /~foo/~bar/~baz}  -> {/ ./~foo ./~bar ./~baz}
+test file.29    {file split /foo/~~~bar/baz}  -> {/ foo ./~~~bar baz}
+test file.30    {file split ~foo/~bar/baz}    -> {~foo ./~bar baz}
+
+# test for.1      {for {set i 0} {[< $i 4]} {incr i} {append r -$i}; set r
+#                 } -> -0-1-2-3
+# test for.2      {for {set i 0} {$i < 6} {incr i} {append r -$i}; set r} \
+#                     -> -0-1-2-3-4-5
+# test for.3      {for {set i 0} {[< $i 4]} {incr i} {append r -$i}; set r}\
+#                     -> -0-1-2-3
+# test for.4      {for {set i 0} {$i < 10} {incr i} {set i 99}; set i} -> 100
+# test for.5      {for {set i 0} {$i < 10} {incr i} {}} -> {}
+
+test foreach.0  {set x ""; foreach i {} {append x ($i)}; set x}        -> {}
+test foreach.1  {set x ""; foreach i {a b c d e} {append x $i};set x} -> abcde
+test foreach.2  {foreach i {a "b c" {d e} f} {append x $i};set x} -> {ab cd ef}
+test foreach.3  {foreach i {a "b {} c" {d e} f} {append x $i};set x} -> {ab {} cd ef}
+test foreach.4  {foreach i {a "b c" {d "x" e} f} {append x $i};set x} -> {ab cd "x" ef}
+test foreach.5  {foreach {i j} {2 3 5 4 5 9} {append x $i/$j,};set x}      -> 2/3,5/4,5/9,
+test foreach.6  {foreach {i j} {2 3 5 4 5 9 0} {append x $i/$j,};set x}      -> 2/3,5/4,5/9,0/,
+test foreach.7  {foreach {i j k} {2 3 5 4 5 9 8} {append x $i+$j=$k,};set x} -> 2+3=5,4+5=9,8+=,
+
+if {$test_config(picol)} {
+    test foreach.8  {catch {foreach a {1 2 3} b {x y z} {}}} -> 1
+}
+test foreach.9  {catch {foreach {}}} -> 1
+
+test format.0   {format hello} -> hello
+test format.1   {format %c 65} -> A
+test format.2   {format %o 4711} -> 11147
+test format.3   {format %X 255} -> FF
+test format.4   {format %010d 255} -> 0000000255
+# test format.5   {format %-+-+-+d 127} -> +127
+
+if {$test_config(picol)} {
+    test format.6   {format %#-010u 255} -> {255       }
+    test format.7   {format %n 0} -> {bad format string "%n"}
+    test format.8   {format %-0n 0} -> {bad format string "%-0n"}
+    test format.9   {format %0-n 0} -> {bad format string "%0-n"}
+    test format.10  {format {%s %s} hi} -> {bad format string "%s %s"}
+}
+
+if {$test_config(glob)} {
+    test glob.1 {lsort [glob globtest/*]} -> {globtest/Makefile {globtest/foo bar} globtest/test1 globtest/test2}
+    test glob.2 {lsort [glob -directory globtest *]} -> {globtest/Makefile {globtest/foo bar} globtest/test1 globtest/test2}
+    test glob.3 {lsort [glob -directory globtest test*]} -> {globtest/test1 globtest/test2}
+    test glob.4 {lsort [glob */test*]} -> {globtest/test1 globtest/test2}
+    test glob.5 {lsort [glob -directory globtest *foo*]} -> {{globtest/foo bar}}
+    test glob.6 {lsort [glob -dir globtest *foo*]} -> {{globtest/foo bar}}
+}
+
+set glo 42
+# test global.1   {proc f x {set ::glo}; f x} -> 42
+# test global.2   {proc f x {incr ::glo}; f x} -> 43
+# test global.2a  {proc f x {global glo; incr glo}; f x} -> 44
+# test global.2b  {variable x {1 2 3}; lset x 1 0} -> {1 0 3}
+# test global.3   {proc f x {global x}; f x} -> {variable "x" already exists}
+# test global.4   {proc f x {global glo; lsort [info vars]}; f x} -> {glo x}
+
+
+
+# test global.5   {proc f x {global glo; set glo}; f x} -> 44
+# test global.6   {proc f x {global glo; set glo $x}; f 56} -> 56
+# test global.7   {proc f x {global a b; set a 1; lsort [info vars]};f y} -> {a b x}
+
+if {$test_config(picol)} {
+    set globals {
+        a x glo match r n tcl thisfile patchlevel _script_ auto_path \
+        argc argv argv0 errorInfo globals \
+    }
+    if {$test_config(arrays)} {
+        lappend globals env tcl_platform test_config
+    } else {
+        lappend globals \
+                tcl_platform(byteOrder) \
+                tcl_platform(engine) \
+                tcl_platform(maxLevel) \
+                tcl_platform(maxLength) \
+                tcl_platform(platform) \
+                tcl_platform(pointerSize) \
+                tcl_platform(wordSize) \
+                test_config(arrays) \
+                test_config(glob) \
+                test_config(hello_file_length) \
+                test_config(interp) \
+                test_config(io) \
+                test_config(newline) \
+                test_config(picol) \
+                test_config(regexp) \
+                test_config(tcl85) \
+                test_config(unix) \
+                test_config(windows)
+    }
+    test global.8  {proc g3 {} {lsort [info globals]}; g3} -> [lsort $globals]
+    unset globals
+}
+
+# test global.9   {proc f x {global glo; return $glo}; f y} -> 56
+
+test if.1       {set a no; if [> 1 0] {set a yes}; set a} -> yes
+test if.2       {set a no; if [> 1 2] {set a yes}; set a} -> no
+test if.3       {set a no; if {1 > 0} {set a yes}; set a} -> yes
+test if.4       {set a no; if {1 > 2} {set a yes}; set a} -> no
+test if.5       {set a no; if {$a eq "no"} {set a yes}; set a} -> yes
+test if.6       {set a no; if {$a ne "no"} {set a yes}; set a} -> no
+test if.7       {set a {a b c};if {[llength $a] == 3} {set a yes}; set a} -> yes
+test if.8       {set a {a b};if {[llength $a] == 3} {set a yes}; set a} -> {a b}
+test if.9       {if 1 {set a yes} else {set a no}} -> yes
+test if.10      {if 0 {set a yes} else {set a no}} -> no
+test if.11      {if 0 {set a yes}} -> ""
+test if.12      {set a 1; if $a {set a 2}; set a} -> 2
+test if.13      {set a 1; if !$a {set a 3}; set a} -> 1
+test if.14      {set a 2; if !$a {set a 3}; set a} -> 2
+test if.15      {set a 0; if !$a {set a 3}; set a} -> 3
+test if.16      {if 0 {lindex foo}} -> {}
+test if.17      {if 0 {lindex foo} else {lindex qux}} -> qux
+test if.18      {
+    if 0 {lindex foo} elseif 1 {lindex bar} else {lindex qux}
+} -> bar
+test if.19      {
+    if 0 {lindex foo} elseif 0 {lindex bar} \
+    elseif 1 {lindex baz} else {lindex qux}
+} -> baz
+test if.20      {if 1 {lindex foo}} -> foo
+test if.21      {if 1 {lindex foo} else {lindex qux}} -> foo
+test if.22      {
+    if 1 {lindex foo} elseif 1 {lindex bar} else {lindex qux}
+} -> foo
+test if.23      {
+    if 0 {lindex foo} elseif 1 {lindex bar} \
+    elseif 0 {lindex baz} else {lindex qux}
+} -> bar
+test if.24      {
+    if 0 {lindex foo} elseif 0 {lindex bar}
+} -> {}
+test if.25      {
+    if 0 {lindex foo} elseif 0 {lindex bar} elseif 0 {lindex baz}
+} -> {}
+test if.26      {if 1 {} elseif} -> {wrong # args: no expression after "elseif" argument}
+test if.27      {if 1 {} elseif 0} -> {wrong # args: no script following "0" argument}
+test if.28      {if 1 {} elseif 0 {} else} -> {wrong # args: no script following "else" argument}
+test if.29      {if 0 {} elseif} -> {wrong # args: no expression after "elseif" argument}
+test if.30      {if 0 {} elseif 0} -> {wrong # args: no script following "0" argument}
+test if.31      {if 0 {} elseif 1} -> {wrong # args: no script following "1" argument}
+test if.32      {if 0 {} elseif 0 {} else} -> {wrong # args: no script following "else" argument}
+test if.33      {if 0 {} elseif 1 {} else} -> {wrong # args: no script following "else" argument}
+test if.34      {if 0 {} elseif 1 {} else {} x} -> {wrong # args: extra words after "else" clause in "if" command}
+test if.35      {if 1 {} elseif 1 {} else {} x} -> {wrong # args: extra words after "else" clause in "if" command}
+if $test_config(picol) {
+    test if.36  {if 0 {} nope} -> {expected "elseif" or "else"}
+    test if.37  {if 0 {} nope x} -> {expected "elseif" or "else"}
+}
+test if.38    {set x {}; if {$x eq {}} { return 1 }} -> 1
+# test if.39    {set x \{; if {$x eq "\{"} { return 1 }} -> 1
+# test if.40    {set x \}; if {$x eq "\}"} { return 1 }} -> 1
+test if.41    {set x \[; if {$x eq "\["} { return 1 }} -> 1
+test if.42    {set x \]; if {$x eq "\]"} { return 1 }} -> 1
+test if.43    {set x \$; if {$x eq "$"} { return 1 }} -> 1
+test if.44    {set x \"; if {$x eq "\""} { return 1 }} -> 1
+test if.45    {set x {[exit]}; if {!$x} { return 1 }} ->* expected*
+test if.46    {set x { }; if {$x} { return 1 }} ->* {*got " "*}
+
+proc call {} {
+    incr ::calls
+}
+test if.38      {set ::calls 0; if {[call]} {}; return $::calls} -> 1
+test if.39      {set ::calls 0; if {![call]} {}; return $::calls} -> 1
+test if.40      {set ::calls 0; if {[call] > 108} {}; return $::calls} -> 1
+unset calls
+rename call {}
+
+if $test_config(picol) {
+    test in.1   {set a 0; if {"c" in "a b c d"} {set a 1}} -> 1
+    test in.2   {expr {"x" in "a b c d"}} -> 0
+    test ni.1   {expr {"c" ni "a b c d"}} -> 0
+    test ni.2   {expr {"x" ni "a b c d"}} -> 1
+}
+test incr.1     {set i 0; incr i 3; set i} -> 3
+test incr.2     {incr i x} -> {expected integer but got "x"}
+
+test info.1 {catch info result; lrange $result 0 2} -> {wrong # args:}
+
+proc f {a b} {+ $a $b}
+test info.args.1 {info args f} -> {a b}
+test info.body.1 {info body f} -> {+ $a $b}
+if $test_config(picol) {
+    set result {abs after append apply}
+    if {$test_config(arrays)} {
+        lappend result array
+    }
+    test info.cmd.1  {lsort [info commands a*]} -> $result
+    unset result
+}
+set F [info level]
+test info.level.0 {set ::F} -> 0
+test info.level.1 {info level} -> 1
+test info.level.2 {proc f {} {info level}; f} -> 2
+test info.level.3 {proc f {x y} {info level 0}; f foo bar} -> {f foo bar}
+test info.level.4 {uplevel 1 {info level 0}} -> {bad level "0"}
+if $test_config(picol) {
+    set result {g3 fac f test}
+    if {$test_config(io)} {
+        lappend result unknown
+    }
+    test info.procs.1 {info procs} -> $result
+    unset result
+}
+
+test info.script.1 {info script} -> test.pcl
+
+if {$test_config(interp)} {
+    test interp.1    {interp alias {} ll {} llength; ll {a b c}} -> 3
+    test interp.2    {set ::F [interp create]; list} -> ""
+    test interp.3    {interp eval $::F {llength {a b c d}}} -> 4
+    test interp.4    {interp alias $::F ll {} llength}      -> ll
+    test interp.5    {interp eval $::F {ll {a b c d e}}}    -> 5
+    test interp.6    {interp eval 12345678 {lindex BAM!}} -> {could not find interpreter "12345678"}
+    test interp.7    {catch interp} -> 1
+    test interp.8    {interp foo} ->* {bad option "foo"*}
+}
+
+test join.1      {join {a b c d} ##}  -> a##b##c##d
+test join.2      {join {a b cx d} ""} -> abcxd
+test join.3      {join {e f g h} ";"} -> "e;f;g;h"
+
+test lappend.1   {set a w; lappend a x} -> {w x}
+test lappend.2   {lappend a} -> {}
+test lappend.3   {lappend a x y z; set a}   -> {x y z}
+test lappend.4   {lappend a x {y z}; set a} -> {x {y z}}
+
+test lassign.1   {lassign {} a b c; list $a $b $c} -> {{} {} {}}
+test lassign.2   {lassign {foo} a b c; list $a $b $c} -> {foo {} {}}
+test lassign.3   {lassign {foo bar baz} a b c; list $a $b $c} -> {foo bar baz}
+test lassign.4   {set rem [lassign {foo bar baz qux quux} a b c]; list $a $b $c $rem} -> {foo bar baz {qux quux}}
+
+test line-continuation.1 {
+    lindex "foo\
+            bar"
+} -> {foo bar}
+test line-continuation.2 {
+    lindex {foo\
+            bar}
+} -> {foo bar}
+test line-continuation.3 {
+    list {*}"foo\
+             bar"
+} -> {foo bar}
+test line-continuation.4 {
+    # Tabs and spaces.
+    eval "list {*}\"foo\\\n\t \t \t bar\""
+} -> {foo bar}
+test line-continuation.5 {
+    list {*}{foo\
+             bar}
+} -> {foo bar}
+test line-continuation.6 {
+    # Tabs and spaces.
+    eval "list {*}{foo\\\n\t \t \t bar}"
+} -> {foo bar}
+test line-continuation.7 {
+    lindex "\
+        foo\
+         bar\
+              baz\
+    "
+} -> { foo bar baz }
+test line-continuation.8 {
+    lindex {\
+        foo\
+         bar\
+              baz\
+    }
+} -> { foo bar baz }
+test line-continuation.9 {
+    lindex {# comment \
+       line}
+} -> {# comment  line}
+test line-continuation.10 {
+    eval {# comment \
+       line}
+} -> {}
+test line-continuation.11 {
+    set {a b} 5
+    set "a\
+            b"
+} -> 5
+test line-continuation.12 {
+    set {a b} 5
+    set {a\
+            b}
+} -> 5
+test line-continuation.13 {
+    set {a b} 5
+    lindex ${a\
+        b}
+} -> 5
+test line-continuation.14 {
+    lindex {a\\
+        b}
+} -> "a\\\\\n        b"
+
+test lindex.1    {lindex {a b c} 1}     -> b
+test lindex.2    {lindex {a b c d e} 0} -> a
+test lindex.3    {lindex "         a                " 0} -> a
+test lindex.4    {lindex "  \t   \n    a      \t \n   b    " 0} -> a
+test lindex.5    {lindex "  \t   \n    a      \t \n   b    " 1} -> b
+test lindex.6    {lindex "  \t   \n    a      \t \n   b    " 2} -> {}
+test lindex.7    {lindex "  \t   \n    {hello world} \t  \n   " 0} -> {hello world}
+test lindex.8    {lindex "  \t   \n    {hello world} \t  \n   " 1} -> {}
+test lindex.9    {lindex {{a} {b} {c}} 1} -> b
+test lindex.10   {lindex {a b c} 1} -> b
+test lindex.11   {lindex {a b c}} -> {a b c}
+test lindex.12   {lindex {}} -> {}
+test lindex.13   {lindex {a b "c"} 3} -> {}
+test lindex.14   {lindex {a b"c"} 1} -> {b"c"}
+test lindex.15   {lindex {a b"c"} 2} -> {}
+if {$test_config(picol)} {
+    # In lindex.16-lindex.18 we expect Picol to do what Jim Tcl, not Tcl 8.x,
+    # does. In Tcl 8.x attempting to [lindex] this string would throw an error.
+    # If we chose to treat it the Jim way, we can keep the assumption that list
+    # parsing never fails.
+    test lindex.16   {lindex {a "b"c} 0} -> a
+    test lindex.17   {lindex {a "b"c} 1} -> b
+    test lindex.18   {lindex {a "b"c} 2} -> c
+}
+test lindex.19   {lindex {a"b"c} 0} -> {a"b"c}
+test lindex.20   {lindex {0 1 2 3 4 5} end} -> 5
+test lindex.20   {lindex 0 end} -> 0
+test lindex.21   {lindex {} end} -> {}
+test lindex.22   {lindex {} -42} -> {}
+test lindex.23   {lindex {a b c} -1} -> {}
+test lindex.24   {lindex {a b c} -2} -> {}
+test lindex.25   {lindex {a b c} -3} -> {}
+
+test linsert.1   {linsert {a b} 1 c}    -> {a c b}
+test linsert.2   {linsert {a b} 1 c d}  -> {a c d b}
+test linsert.3   {linsert {a b} end c}  -> {a b c}
+test linsert.4   {linsert {a b} end c d e}  -> {a b c d e}
+test linsert.5   {linsert {a b} 3 c d e}  -> {a b c d e}
+test linsert.6   {linsert {a b} 0 c d e}  -> {c d e a b}
+
+test list.0      list -> {}
+test list.1      {list a "b c" d}       -> {a {b c} d}
+test list.2      {list "" a} -> {{} a}
+test list.3      {list a {} b} -> {a {} b}
+test list.4      {list a {}} -> {a {}}
+test list.5      {list a \t} -> "a {\t}"
+test list.6      {list a \n} -> "a {\n}"
+test list.7      {list a {\n}} -> {a {\n}}
+test list.8      {list a {\r}} -> {a {\r}}
+test list.9      {list a {\t}} -> {a {\t}}
+test list.10     {list {$a}} -> {{$a}}
+test list.11     {list {[hi]}} -> {{[hi]}}
+test list.11     {list {[hi]}} -> {{[hi]}}
+
+test llength.0   {llength {}} -> 0
+test llength.1   {llength { }} -> 0
+test llength.2   {llength {   }} -> 0
+test llength.3   {llength {   1}} -> 1
+test llength.4   {llength {   1 }} -> 1
+test llength.5   {llength {   1 2}} -> 2
+test llength.6   {llength {   1 2  3      }} -> 3
+test llength.7   {llength {a b c d e}} -> 5
+test llength.8   {llength "   \t  \n                          "} -> 0
+test llength.9   {llength "   \t  \n         a                "} -> 1
+
+if {!$test_config(tcl85)} {
+    test lmap.1   {set x ""; lmap i {} {append x ($i)}; set x}        -> {}
+    test lmap.2   {set x ""; lmap i {a b c d e} {append x $i};set x}  -> abcde
+    test lmap.3   {lmap i {a "b c" {d e} f} {lindex -$i-}}            -> {-a- {-b c-} {-d e-} -f-}
+    test lmap.4   {lmap {i j} {1 2 3 4 5 6} {lindex $i$j}}            -> {12 34 56}
+    test lmap.5   {lmap {i j k} {1 2 3 4 5 6} {expr {$i + $j + $k}}}  -> {6 15}
+    test lmap.6   {lmap i {0 1 2 3 4 5 6} {if {[% $i 2] == 0} continue; lindex $i}} -> {1 3 5}
+    test lmap.7   {lmap i {0 1 22 55 97 123 250 870 959} {if {$i >= 90} break; lindex $i}} -> {0 1 22 55}
+    test lmap.8   {
+        lmap i {0 1 2 3 4} {
+            lmap j {a b c d e} {
+                if {$i > 1} break
+                lindex $i$j
+            }
+        }
+    } -> {{0a 0b 0c 0d 0e} {1a 1b 1c 1d 1e} {} {} {}}
+    test lmap.9   {lmap {i j} {0 1 2 3 4 5} {if {[% [+ $i $j] 2] == 0} continue; lindex $i}} -> {0 2 4}
+    test lmap.10  {
+        lmap i {0 1 2 3 4 5} {
+            set x $i
+            continue
+            error {this should not be reached}
+        }
+        set x
+    } -> 5
+}
+
+test lrange.1    {lrange {a b c d e f g} 1 3} -> {b c d}
+test lrange.2    {lrange {a b c d e f g} 3 end} -> {d e f g}
+test lrange.3    {lrange {a b c d e f g} 3 99} -> {d e f g}
+test lrange.4    {lrange {do re mi fa so la si} 0 2} -> {do re mi}
+test lrange.5    {lrange {do re mi fa so la si} -5 -7} -> {}
+test lrange.6    {lrange {do re mi fa so la si} -7 -5} -> {}
+test lrange.7    {lrange {do re mi fa so la si} -5 2} -> {do re mi}
+test lrange.8    {lrange {do re mi fa so la si} 0 -7} -> {}
+test lrange.9    {lrange {do re mi fa so la si} 99 99} -> {}
+
+if {!$test_config(tcl85)} {
+    test lrepeat.1   {lrepeat 0} -> {}
+    test lrepeat.2   {lrepeat 0 a b c} -> {}
+    test lrepeat.3   {lrepeat 99} -> {}
+}
+test lrepeat.4   {lrepeat 1 a b c} -> {a b c}
+test lrepeat.5   {lrepeat 3 a b c} -> {a b c a b c a b c}
+
+test lreplace.1  {lreplace {a b c d} 2 2 x} -> {a b x d}
+test lreplace.2  {lreplace {a b c d} 2 2 x y} -> {a b x y d}
+test lreplace.3  {lreplace {a b c d} 0 0}   -> {b c d}
+test lreplace.4  {lreplace {a b c d} 0 99}   -> {}
+test lreplace.5  {lreplace {a b c d} 0 end}   -> {}
+test lreplace.6  {lreplace {a b c d} 1 2 B C}   -> {a B C d}
+test lreplace.7  {lreplace {a b c d} 1 end B C D}   -> {a B C D}
+test lreplace.8  {lreplace " \t \n a \n " 0 0 b} -> b
+test lreplace.9  {lreplace {} 0 0 a} -> a
+if {!$test_config(tcl85)} {
+    # This will work incorrectly in some Tcl 8.6 versions < 8.6.9.
+    test lreplace.10 {lreplace {a b c} 99 99 d} -> {a b c d}
+    test lreplace.11 {lreplace {a b c} 99 end d} -> {a b c d}
+}
+test lreplace.12 {lreplace {a b c} 2 3 d e} -> {a b d e}
+test lreplace.13 {lreplace {} -5 -1 a} -> a
+test lreplace.14 {lreplace {c b} -5 0 a} -> {a b}
+test lreplace.15 {lreplace {f x} -5 end c d} -> {c d}
+test lreplace.16 {lreplace {b c} -5 -1 a} -> {a b c}
+if {!$test_config(tcl85)} {
+    test lreplace.17 {lreplace {a b} 2 2 c} -> {a b c}
+    test lreplace.18 {lreplace {a b c} 3 3 d e} -> {a b c d e}
+    test lreplace.19 {lreplace " \t \n a \n b " 2 2 c} -> {a b c}
+}
+
+test lreverse.1  {lreverse {}} -> {}
+test lreverse.2  {lreverse a} -> a
+test lreverse.3  {lreverse {a b}} -> {b a}
+test lreverse.4  {lreverse {a {longer string} b}} -> {b {longer string} a}
+test lreverse.5  {lreverse {    1       2  3  4  5 }} -> {5 4 3 2 1}
+
+test lsearch.1   {lsearch {a b c d e} c} -> 2
+test lsearch.2   {lsearch {a b c d e} x} -> -1
+test lsearch.3   {lsearch {a b {c d} e} {c d}} -> 2
+test lsearch.4   {lsearch {foo bar grill} b*} -> 1
+test lsearch.5   {lsearch -glob {foo bar grill} b*} -> 1
+test lsearch.6   {lsearch -exact {foo bar grill} b*} -> -1
+test lsearch.7   {lsearch -exact {foo bar grill} b*} -> -1
+test lsearch.8   {lsearch -exact {foo bar grill} barrr} -> -1
+test lsearch.9   {lsearch -exact {foo bar grill} {}} -> -1
+
+test lset.1      {set a {1 2 3 4}; lset a 1 x} -> {1 x 3 4}
+test lset.2      {set a {1 2 3 4}; lset a 99 x} -> "list index out of range"
+test lset.3      {set a {1 2 3 4}; lset a -1 x} -> "list index out of range"
+test lset.4      {lset foobar 4 2} -> {can't read "foobar": no such variable}
+test lset.5      {set x {{a b} {c d} {e f}}; lset x 2 foo} -> {{a b} {c d} foo}
+
+test lsort.0     {lsort {}} -> {}
+test lsort.1     {lsort {cc a ddd b}} -> {a b cc ddd}
+test lsort.2     {lsort {3 1 4 2}} -> {1 2 3 4}
+test lsort.3     {lsort {{c d} {a b}}} -> {{a b} {c d}}
+test lsort.4     {lsort -decreasing {c a d b}} -> {d c b a}
+test lsort.5     {lsort  {10 3 5 2}} -> {10 2 3 5}
+test lsort.6     {lsort -integer {10 3 2 5}} -> {2 3 5 10}
+test lsort.7     {lsort -unique {cc a dd cc b}} -> {a b cc dd}
+test lsort.8     {lsort -unique} -> -unique
+test lsort.9     {lsort -integer {9 zap foo bar 1 5}} -> {expected integer but got "zap"}
+test lsort.10    {lsort -integer {0xff 0b100 -5}} -> {-5 0b100 0xff}
+
+test max.1       {max 0} -> 0
+test max.2       {max 0 1} -> 1
+test max.3       {max -5 2 99 -100 47 52} -> 99
+test min.1       {min 0} -> 0
+test min.2       {min 0 1} -> 0
+test min.3       {min -5 2 99 -100 47 52} -> -100
+
+test parser.1    {set a \
+123; incr a} -> 124
+test parser.2    {set abc 5; return ${abc}} -> 5
+test parser.3    {set {abc} 5; return $abc} -> 5
+test parser.4    {format $&abc} -> $&abc
+test parser.5    {set x a\ b; set x} -> {a b}
+test parser.6    {set x $}  -> $
+test parser.7    {set x $%} -> $%
+
+test proc.1      {proc h x {* $x $x}; h 5} -> 25
+test proc.2      {proc f args {set args}; f foo bar grill} -> {foo bar grill}
+test proc.3      {proc f {args x} {set x}; f foo bar} -> bar
+test proc.4      {proc f {} {}; rename f {}; proc f {} {}} -> {}
+test proc.5      {proc} ->* {wrong # args*}
+
+if {$test_config(picol) && $test_config(io)} {
+    test puts.x  {puts hello world} -> {expected pointer but got "hello"}
+}
+
+if {$test_config(io)} {
+    if {$test_config(windows)} {
+        if {$test_config(picol)} {
+            set root C:\\
+        } else {
+            set root C:/
+        }
+    } else {
+        set root /
+    }
+    test pwd.1   {set old_path [pwd]; cd $::root; set result [pwd]; cd $old_path; set result} -> $root
+    unset root
+}
+
+if {$test_config(regexp)} {
+    test regexp.1  {regexp bar foo} -> 0
+    test regexp.2  {regexp foo foo} -> 1
+    test regexp.3  {
+        regexp ^(a+)(b+)\$ aaabb _ a b
+        list $a $b
+    } -> {aaa bb}
+    test regexp.4  {
+        regexp {} {} m a
+        list [info exists m] [info exists a] [info exists b]
+    } -> {1 1 0}
+    test regexp.5  {
+        set re {(-?)(?:0*(([1-9][0-9]+)|(0)))}
+        set result {}
+        regexp $re -0001234 m a b
+        lappend result $m $a $b
+        regexp $re -0 m a b
+        lappend result $m $a $b
+    } -> [list -0001234 - 1234   -0 - 0]
+    test regexp.6 {
+        lindex aaaaabbb
+    } ->$ a+b+
+}
+
+test rename.1    {rename h gg; gg 6} -> 36
+test rename.2    {rename gg ""; info commands gg} -> {}
+test rename.3    {rename no-such foo} -> {can't rename "no-such": command doesn't exist}
+test rename.4    {rename no-such {}} -> {can't delete "no-such": command doesn't exist}
+
+test scan.1      {scan A %c}               -> 65
+test scan.2      {scan FF %x}              -> 255
+test scan.3      {scan fe %x foo; set foo} -> 254
+test scan.4      {scan fe %x foo}          -> 1
+test scan.5      {scan [format %c 196] %c} -> 196
+
+if {$test_config(io)} {
+    test tell.1  {set ::f [open t.t];gets $::f line; tell $::f} -> $test_config(hello_file_length)
+    test tell.2  {tell 12345678} -> {can not find channel named "12345678"}
+    test seek.1  {seek $::f 0; tell $::f} -> 0
+    test seek.2  {seek $::f 2; gets $::f} -> llo
+    test seek.3  {seek 12345678 0xFF} -> {can not find channel named "12345678"}
+}
+
+test set.1       {set x 42}                -> 42
+test set.2       {set x 24; set x}         -> 24
+test set.3       {set x_y 35; set x_y}     -> 35
+test set.4       {set x_y 37; return $x_y} -> 37
+
+if {$test_config(io)} {
+    test source.1    {source globtest/test1} -> {}
+    if {$test_config(windows)} {
+        test source.2    {source globtest\\test1} -> {}
+        test source.3    {source [pwd]\\globtest\\test1} -> {}
+    }
+}
+
+test split.1     {split aa:bb:cd:efg :}     -> {aa bb cd efg}
+test split.2     {split :aa:bb:cd:efg :}    -> {{} aa bb cd efg}
+test split.3     {split aa:bb:cd:efg: :}    -> {aa bb cd efg {}}
+test split.4     {split {a  b}}             -> {a {} b}
+test split.5     {split hello ""}           -> {h e l l o}
+test split.6     {split a+b-c+d +-}         -> {a b c d}
+test split.7     {split "a;b;cc;d" ";"}     -> {a b cc d}
+test split.8     {split abcdef\nghi\nj \n}  -> {abcdef ghi j}
+test split.9     {split abcdefXghiXj X}     -> {abcdef ghi j}
+
+test str.first.1  {string first a abcdefg}   -> 0
+test str.first.2  {string first x abcdefg}   -> -1
+test str.first.3  {string first e abcdefg}   -> 4
+test str.first.4  {string first f abcdefg 2} -> 5
+test str.first.5  {string first a abcdefg 2} -> -1
+test str.first.6  {string first a abcdefg -1} -> 0
+test str.first.7  {string first a abcdefg 99} -> -1
+test str.first.8  {string first g abcdefg 5} -> 6
+test str.first.9  {string first g abcdefg 6} -> 6
+test str.first.10 {string first g abcdefg 7} -> -1
+test str.index.1  {string index hello 1}   -> e
+test str.index.2  {string index hello end} -> o
+test str.index.3  {string index {} 2}      -> {}
+test str.index.4  {string index {} end}    -> {}
+test str.index.5  {string index {} -562}   -> {}
+test str.int.1    {string is int 42}  -> 1
+test str.int.2    {string is int -1}  -> 1
+test str.int.3    {string is int foo} -> 0
+test str.int.4    {string is integer 42} -> 1
+test str.int.5    {string is integer -1} -> 1
+test str.int.6    {string is integer foo} -> 0
+test str.int.7    {string is integer {}} -> 1
+test str.last.1   {string last + a+b+c+d} -> 5
+test str.last.2   {string last - a+b+c+d} -> -1
+test str.last.3   {string last + a+b+c+d 5} -> 5
+test str.last.4   {string last + a+b+c+d 3} -> 3
+test str.last.5   {string last + a+b+c+d 99} -> 5
+test str.last.6   {string last + a+b+c+d -1} -> -1
+test str.last.7   {string last g abcdefg 5} -> -1
+test str.last.8   {string last g abcdefg 6} -> 6
+test str.last.9   {string last g abcdefg 7} -> 6
+test str.last.10  {string last a abcdefg -1} -> -1
+test str.last.11  {string last a abcdefg 0} -> 0
+test str.last.12  {string last a abcdefg 1} -> 0
+test str.last.13  {string last foo foofoofoo 0} -> -1
+test str.last.14  {string last foo foofoofoo 3} -> 0
+test str.last.15  {string last foo foofoofoo 6} -> 3
+test str.last.16  {string last foo foofoofoo 7} -> 3
+test str.last.17  {string last oo oooooo 3} -> 2
+test str.length   {string length hello}   -> 5
+test str.lower    {string tolower FOO}    -> foo
+
+test str.map.1   {string map {FOO BAR} abcdFOOefgh}           -> abcdBARefgh
+test str.map.2   {string map -nocase {foo BAR} abcdFOOefgh}   -> abcdBARefgh
+test str.map.3   {string map {a b} aaaaa}         -> bbbbb
+test str.map.4   {string map {a b c d X {}} XabcbaX}     -> bbdbb
+test str.map.5   {string map {a b c} abcba}       -> {char map list unbalanced}
+test str.map.6   {string map {foo bar} f}         -> f
+test str.map.7   {string map {foo bar} fo}        -> fo
+test str.map.8   {string map {a b eh ha e f} aehaeheee}  -> bhabhafff
+test str.map.9   {string map {s longer} xsx}      -> xlongerx
+test str.map.10  {string map {quite_long shorter} this_is_quite_long} -> this_is_shorter
+test str.map.11  {string map {{} {}} hello}       -> hello
+test str.map.12  {string map {{} { }} hello}      -> hello
+test str.map.13  {string map {1 2 2 3} 1} -> 2
+test str.map.14  {string map {foo bar ba xx x z o 0} foo} -> bar
+test str.map.15  {string map {a b c d} ca} -> db
+test str.map.16  {string map {abc 1 ab 2 a 3 1 0} 1abcaababcabababc} -> 01321221
+test str.map.17  {string map {1 0 ab 2 a 3 abc 1} 1abcaababcabababc} -> 02c322c222c
+if {$test_config(picol)} {
+    set long [list x [string repeat x 100]]
+
+    test str.map.18  {
+        string length [string map $::long [string map $::long $::long]]
+    } -> {string too long}
+
+    unset long
+}
+
+test str.match.1  {string match f* foo}     -> 1
+test str.match.2  {string match f* bar}     -> 0
+test str.match.3  {string match *ll* hello} -> 1
+test str.match.4  {string match *ll* world} -> 0
+test str.match.5  {string match *lo hello}  -> 1
+test str.match.6  {string match *lo world}  -> 0
+test str.match.7  {string match foo foo}    -> 1
+test str.match.8  {string match foo bar}    -> 0
+test str.match.9  {string match foo FOO}    -> 0
+test str.match.10 {string match -nocase foo FOO} -> 1
+test str.match.11 {string match f?o foo} -> 1
+test str.match.12 {string match ?foo foo} -> 0
+test str.match.13 {string match f?o* foolish} -> 1
+test str.match.14 {string match f foo} -> 0
+test str.match.15 {string match "" ""} -> 1
+test str.match.16 {string match {\*\*\?\*} **?*} -> 1
+test str.match.17 {string match {\*\*\?\*} **a*} -> 0
+test str.match.18 {string match {\*\*\?\*} x*?*} -> 0
+test str.match.19 {string match {\*\*\?\*} **?x} -> 0
+test str.match.20 {string match {\\\\} {\\}} -> 1
+test str.match.21 {string match {\\} {\\}} -> 0
+test str.match.22 {string match * {}} -> 1
+test str.match.23 {string match ** dasdasdsadfdsafs} -> 1
+test str.match.24 {string match ** {}} -> 1
+test str.match.25 {string match ** dasdasdsadfdsafs} -> 1
+test str.match.26 {string match foobar* foobarbaz} -> 1
+test str.match.27 {string match foobar* foobar} -> 1
+test str.match.28 {string match foobar* foo} -> 0
+test str.match.29 {string match *barbaz foobarbaz} -> 1
+test str.match.30 {string match *barbaz barbaz} -> 1
+test str.match.31 {string match *barbaz baz} -> 0
+test str.match.32 {string match *bar* foobarbaz} -> 1
+test str.match.33 {string match *bar* bar} -> 1
+test str.match.34 {string match *bar* a} -> 0
+test str.match.35 {string match *baaar* aa} -> 0
+test str.match.36 {string match *bar* ba} -> 0
+test str.match.37 {string match *bar* ar} -> 0
+test str.match.39 {string match *a* {}} -> 0
+test str.match.40 {string match *a* a} -> 1
+test str.match.41 {string match *a* aa} -> 1
+test str.match.42 {string match *a* aaa} -> 1
+test str.match.43 {string match *aa* a} -> 0
+test str.match.44 {string match *aa* aa} -> 1
+test str.match.45 {string match *aa* aaa} -> 1
+test str.match.46 {string match \n \n} -> 1
+test str.match.47 {string match {\n} \n} -> 0
+test str.match.48 {string match {\\a} \\a} -> 1
+test str.match.49 {string match {*\\\\} {\\}} -> 1
+test str.match.50 {string match {\\\\*} {\\}} -> 1
+test str.match.51 {string match {*\\\\*} {\\}} -> 1
+if {$test_config(picol)} {
+    test str.match.52 {string match a*b aasdfab} -> {unsupported pattern: "a*b"}
+    test str.match.53 {string match -nocase a*b aasdfab} -> {unsupported pattern: "a*b"}
+}
+
+test str.range.1   {string range abcde 1 3} -> bcd
+test str.range.2   {string range abcde 1 0} -> ""
+test str.range.3   {string range abcdefg 0 end} -> "abcdefg"
+test str.range.4   {string range abcdefg -5 -7} -> {}
+test str.range.5   {string range abcdefg -7 -5} -> {}
+test str.range.6   {string range abcdefg -2 1} -> ab
+test str.range.7   {string range abcdefg -99 2} -> abc
+test str.range.8   {string range abcdefg  0 -1} -> {}
+test str.range.9   {string range abcdefg  0 99} -> abcdefg
+test str.range.10  {string range abcdefg  0 6} -> abcdefg
+test str.range.11  {string range abcdefg  0 5} -> abcdef
+test str.range.12  {string range abcdefg  99 99} -> {}
+test str.repeat.1  {string repeat foo 3} -> foofoofoo
+test str.repeat.2  {string repeat foo 0} -> ""
+test str.repeat.3  {string repeat} ->* {wrong # args*}
+if $test_config(picol) {test str.repeat.4  {string repeat foo 10000} -> "string too long"}
+if $test_config(picol) {test str.rev {string reverse picol} -> locip ;# 8.5 :)}
+test str.trim.1  {string trim "  abc\t\t"}     -> abc
+test str.trim.2  {string trim ::def::: :}      -> def
+test str.trim.3  {string trim ghi xkl}         -> ghi
+test str.trim.4  {string trimleft  aaabcdaa a} -> bcdaa
+test str.trim.5  {string trimright aaabcdaa a} -> aaabcd
+test str.trim.6  {string trim      fffff f}    -> ""
+test str.trim.7  {string trimleft  fffff f}    -> ""
+test str.trim.8  {string trimright fffff f}    -> ""
+
+test str.upper   {string toupper foo} -> FOO
+
+test subst.1     {set a foo; subst {$a [string length $a]}} -> {foo 3}
+test subst.2     {subst {h\x65llo}} -> hello
+
+test switch.1    {set x 5;switch $x {4 - 5 {set y k} default {set y 0}}} -> k
+test switch.2    {set x 4;switch $x {4 - 5 {set y K} default {set y 0}}} -> K
+test switch.3    {set x 6;switch $x {4 - 5 {set y k} default {set y df}}} -> df
+test switch.4    {set x 5;switch $x 4 - 5 {set y k} default {set y 0}} -> k
+test switch.5    {set x 4;switch $x 4 - 5 {set y K} default {set y 0}} -> K
+test switch.6    {set x 6;switch $x 4 - 5 {set y k} default {set y df}} -> df
+
+test tcl_platform.1 {info exists ::tcl_platform(platform)} -> 1
+if {$test_config(picol)} {
+    test tcl_platform.2 {
+        set s {}
+        set len $::tcl_platform(maxLength)
+        for {set i 0} {$i < $len} {incr i} {
+            append s x
+        }
+        string length $s
+    } -> $tcl_platform(maxLength)
+    test tcl_platform.3 {
+        set s {}
+        set len [expr {$::tcl_platform(maxLength) + 1}]
+        for {set i 0} {$i < $len} {incr i} {
+            append s x
+        }
+    } -> {string too long}
+    test tcl_platform.4 {string is int $::tcl_platform(maxLevel)} -> 1
+    test tcl_platform.5 {expr {$::tcl_platform(maxLevel) > 1}} -> 1
+}
+
+test time.1      {
+    scan [time {lindex 0}] %d t
+    && [>= $t 0] [< $t 1000]
+} -> 1
+test time.2      {
+    scan [time {after 10} 5] %d t
+    && [>= $t 0] [< $t 50000]
+} -> 1
+
+if {!$test_config(tcl85)} {
+    test try.1   {try {lindex foo}} -> foo
+    test try.2   {try {lindex foo} on error x {lindex bar}} -> foo
+    test try.3   {try {lindex foo} finally {lindex bar}} -> foo
+    test try.4   {try {error fail} on error e {lindex baz}} -> baz
+    test try.5   {try {error fail} on error e {lindex baz} finally {lindex bar}} -> baz
+    test try.6   {try {error fail} on error e {lindex $e} finally {lindex bar}} -> fail
+    test try.7   {try {} finally {set x 5}; set x} -> 5
+    test try.8   {try {error fail} finally {set x 5}; set x} -> fail
+    test try.9   {try {error fail} finally {error whoa}} -> whoa
+    test try.10  {try {error fail} on error x {error whoa}} -> whoa
+    test try.11  {catch {try {error fail} on error x {error whoa} finally {set x 7}}; set x} -> 7
+    test try.12  {try {} finally {error whoa}} -> whoa
+    test try.13  {for {set i 0} {$i < 10} {incr i} {try break}; set i} -> 0
+    test try.14  {for {set i 0} {$i < 10} {incr i} {try {} finally break}; set i} -> 0
+    test try.15  {for {set i 0} {$i < 10} {incr i} {try {error fail} on error x break}; set i} -> 0
+    test try.16  {for {set i 0} {$i < 10} {incr i} {try {} on error x break}; set i} -> 10
+    test try.17  {
+        for {set i 0} {$i < 10} {incr i} {
+            try {
+                error fail
+            } on error x {
+                continue
+            }
+            set i 99
+        }
+        set i
+    } -> 10
+    test try.18  {try break finally {lindex bar}} -> {}
+    test try.19  {try continue finally {lindex bar}} -> {}
+    test try.20  {try break on error x {lindex baz}} -> {}
+    test try.21  {try continue on error x {lindex baz}} -> {}
+    if {$test_config(picol)} {
+        test try.22  {try {} foinally {}} -> {bad argument "foinally": expected "finally"}
+        test try.23  {try {} an era x {}} -> {bad argument "an": expected "on"}
+        test try.24  {try {} on era x {}} -> {bad argument "era": expected "error"}
+        test try.25  {try {} on error x {} foinally {}} -> {bad argument "foinally": expected "finally"}
+        test try.26  {try} -> {wrong # args: should be "try body ?on error varName handler? ?finally script?"}
+        test try.27  {try {} on} -> {wrong # args: should be "try body ?on error varName handler? ?finally script?"}
+        test try.28  {try {} on error} -> {bad argument "on": expected "finally"}
+        test try.29  {try {} on error x} -> {wrong # args: should be "try body ?on error varName handler? ?finally script?"}
+        test try.30  {try {} finally} -> {wrong # args: should be "try body ?on error varName handler? ?finally script?"}
+        test try.31  {try {} on error x {} finally} -> {wrong # args: should be "try body ?on error varName handler? ?finally script?"}
+    }
+}
+
+test unset.1     {set foo 1;unset foo;info exists foo} -> 0
+test unset.2     {set ::foo 1;unset ::foo;info exists ::foo} -> 0
+test unset.3     {unset absent} -> {can't unset "absent": no such variable}
+test unset.4     {unset ::absent} -> {can't unset "::absent": no such variable}
+test unset.5     {unset nosuch(element)} -> {can't unset "nosuch(element)": no such variable}
+test unset.6     {unset ::nosuch(element)} -> {can't unset "::nosuch(element)": no such variable}
+
+test unknown.1  bogus -> {invalid command name "bogus"}
+if {$test_config(io)} {
+    test unknown.2   {info commands unknown} -> unknown
+}
+test unknown.3   {proc unknown args {return "? $args"}; bogus} -> "? bogus"
+test unknown.4   {info commands unknown} -> unknown
+rename unknown {}
+
+test unset.1     {set a 5; unset a; info exists a} -> 0
+test unset.2     {unset a} -> {can't unset "a": no such variable}
+
+test uplevel.1   {uplevel 1 set glo} -> 56
+test uplevel.2   {proc f x {uplevel 1 set gg $x}; f 55; set gg} -> 55
+test uplevel.3   {proc f x {g x};proc g x {uplevel #0 info vars};
+                  string equal [f x] [info globals]} -> 1
+
+test variable.1  {proc f x {variable glo;   set glo}; f x} -> 56
+test variable.2  {proc f x {variable glo 78;set glo}; f x} -> 78
+test variable.3  {proc f x {variable glo 78 a;set a}; f x} -> 1
+
+test while.1     {set i 10; while {$i} {incr i -1}} -> ""
+test while.2     {set i 10; while {$i} {incr i -1}; set i} -> 0
+test while.3     {set i 10; while {$i > 5} {incr i -1}; set i} -> 5
+
+#-- These tests are for Picol only. Skip them in Tcl 8.x.
+if {$test_config(picol) && $test_config(io)} {
+    #-------- A somewhat complicated way to get the output from another process.
+    proc eval-in-tclsh script {
+        set tempFile temp.tcl
+        try {
+            set f [open $tempFile w]
+            puts $f $script
+            close $f
+            return [exec $::tcl $tempFile]
+        } finally {
+            file delete $tempFile
+        }
+    }
+
+    if {[catch {set output [eval-in-tclsh {puts [lsort [info commands]]}]}]} {
+        puts -nonewline "Warning: Can't run \"$tcl\"; "
+        puts {the test suite won't be tested against}
+        puts {         mainline Tcl and no statistics will be reported.}
+    } else {
+        puts "tclsh $thisfile -m $match"
+        foreach x [split [exec $tcl $thisfile -m $match] \n] {
+            puts "    $x"
+        }
+        #-|- Test the test suite for Tcl compliance. :)
+
+        set miss {}
+
+        foreach i $output {
+            if [string match auto* $i]       continue
+            if {$i in {case history tclLog}} continue
+            if {[info commands $i] ne $i}    {lappend miss $i}
+        }
+
+        set nc  [llength [info commands]]
+        set now [clock format [clock seconds] -format %H:%M:%S]
+        puts -nonewline "Picol [info pa] at $now has $nc commands. "
+        puts "Lines of code: [eval-in-tclsh {
+            puts [llength [split [read [open picol.h]] \n]]
+        }]"
+        puts "Still missing [llength $miss] commands: $miss"
+    }
+}
+
+puts "[info script] [info patchlevel]: ---------------- tested $n, failed $r"
