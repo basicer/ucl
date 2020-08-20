@@ -37,6 +37,11 @@ if haveffi then
 	end
 end
 
+if arg[1] then 
+	i:eval(io.open(arg[1], 'r'):read("*a"))
+	os.exit()
+end
+
 repeat
 	local line = readline()
 	if line ~= nil then

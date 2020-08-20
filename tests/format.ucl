@@ -10,22 +10,21 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-#if {[lsearch [namespace children] ::tcltest] == -1} {
-#    package require tcltest 2
-#    namespace import -force ::tcltest::*
-#}
+# if {[lsearch [namespace children] ::tcltest] == -1} {
+#     package require tcltest 2
+#     namespace import -force ::tcltest::*
+# }
 
-# %u output depends on word length, so this test is not portable.
-#testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-#testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
-#testConstraint wideIs64bit \
-#	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
-#testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
+#  %u output depends on word length, so this test is not portable.
+# testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+# testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
+# testConstraint wideIs64bit \
+# 	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+# testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
 
 # testConstraint longIs32bit 1
 # testConstraint eformat 0
 
-return
 
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
@@ -80,7 +79,7 @@ test format-1.11 {integer formatting} longIs32bit {
 test format-1.11.1 {integer formatting} longIs64bit {
     format "%-#20o %#-20o %#-20o %#-20o" 6 34 16923 -12 -1
 } {06                   042                  041033               01777777777777777777764}
-test format-1.12 {integer formatting} ignoreUnimplemented {
+test format-1.12 {integer formatting} {fails} {
     format "%b %#b %llb" 5 5 [expr {2**100}]
 } {101 0b101 10000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}
 
@@ -99,10 +98,10 @@ test format-2.4 {string formatting} {
 test format-2.5 {string formatting, embedded nulls} {
     format "%10s" abc\0def
 } "   abc\0def"
-test format-2.6 {string formatting, international chars} {
+test format-2.6 {string formatting, international chars} {fails} {
     format "%10s" abc\ufeffdef
 } "   abc\ufeffdef"
-test format-2.7 {string formatting, international chars} {
+test format-2.7 {string formatting, international chars} {fails} {
     format "%.5s" abc\ufeffdef
 } "abc\ufeffd"
 test format-2.8 {string formatting, international chars} {
@@ -126,7 +125,7 @@ test format-2.13 {string formatting, precision} {
 test format-2.14 {string formatting, precision} {
     format "a%.sa" foobarbaz
 } "aa"
-test format-2.15 {string formatting, precision} {
+test format-2.15 {string formatting, precision} {fails} {
     list [catch {format "a%.-2sa" foobarbaz} msg] $msg
 } {1 {bad field specifier "-"}}
 test format-2.16 {string formatting, width and precision} {
@@ -139,11 +138,11 @@ test format-2.17 {string formatting, width and precision} {
 test format-3.1 {Tcl_FormatObjCmd: character formatting} ignoreKnownProblem {
     format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 65 65 65 65 65 65 3 65 -4 65
 } "|A|A|A|A|A     |     A|  A|A   |"
-test format-3.2 {Tcl_FormatObjCmd: international character formatting} ignoreKnownProblem {
+test format-3.2 {Tcl_FormatObjCmd: international character formatting} {fails} {
     format "|%c|%0c|%-1c|%1c|%-6c|%6c|%*c|%*c|" 0xa2 0x4e4e 0x25a 0xc3 0xff08 0 3 0x6575 -4 0x4e4f
 } "|\ua2|\u4e4e|\u25a|\uc3|\uff08     |     \0|  \u6575|\u4e4f   |"
 
-test format-4.1 {e and f formats} {eformat} ignoreKnownProblem  {
+test format-4.1 {e and f formats} {fails} {
     format "%e %e %e %e" 34.2e12 68.514 -.125 -16000. .000053
 } {3.420000e+13 6.851400e+01 -1.250000e-01 -1.600000e+04}
 test format-4.2 {e and f formats} {eformat} {
@@ -173,10 +172,10 @@ test format-4.9 {e and f formats} {
 test format-4.10 {e and f formats} {
     format "%20f %-20f %020f" -9.99996 -9.99996 9.99996
 } {           -9.999960 -9.999960            0000000000009.999960}
-test format-4.11 {e and f formats} ignoreKnownProblem {
+test format-4.11 {e and f formats} {
     format "%-020f %020f" -9.99996 -9.99996 9.99996
 } {-9.999960            -000000000009.999960}
-test format-4.12 {e and f formats} {eformat} ignoreKnownProblem {
+test format-4.12 {e and f formats} {fails} {
     format "%.0e %#.0e" -9.99996 -9.99996 9.99996
 } {-1e+01 -1.e+01}
 test format-4.13 {e and f formats} {
@@ -278,10 +277,10 @@ test format-6.8 {floating-point zeroes} {
     format "%3.1f %3.1f %3.1f %3.1f" 0.0 0.1 0.01 0.001
 } {0.0 0.1 0.0 0.0}
 
-test format-7.1 {various syntax features} {
+test format-7.1 {various syntax features} {fails} {
     format "%*.*f" 12 3 12.345678901
 } {      12.346}
-test format-7.2 {various syntax features} {
+test format-7.2 {various syntax features} {fails} {
     format "%0*.*f" 12 3 12.345678901
 } {00000012.346}
 test format-7.3 {various syntax features} {
@@ -305,55 +304,55 @@ test format-8.4 {error conditions} {
 test format-8.5 {error conditions} {
     catch {format %*.*f 12}
 } 1
-test format-8.6 {error conditions} {
+test format-8.6 {error conditions} {fails} {
     catch {format %*.*f 12} msg
     set msg
 } {not enough arguments for all format specifiers}
 test format-8.7 {error conditions} {
     catch {format %*.*f 12 3}
 } 1
-test format-8.8 {error conditions} {
+test format-8.8 {error conditions} {fails} {
     catch {format %*.*f 12 3} msg
     set msg
 } {not enough arguments for all format specifiers}
-test format-8.9 {error conditions} {
+test format-8.9 {error conditions} {fails} {
     list [catch {format %*d x 3} msg] $msg
 } {1 {expected integer but got "x"}}
-test format-8.10 {error conditions} {
+test format-8.10 {error conditions} {fails} {
     list [catch {format %*.*f 2 xyz 3} msg] $msg
 } {1 {expected integer but got "xyz"}}
 test format-8.11 {error conditions} {
     catch {format %d 2a}
 } 1
-test format-8.12 {error conditions} {
+test format-8.12 {error conditions} {fails} {
     catch {format %d 2a} msg
     set msg
 } {expected integer but got "2a"}
 test format-8.13 {error conditions} {
     catch {format %c 2x}
 } 1
-test format-8.14 {error conditions} {
+test format-8.14 {error conditions} {fails} {
     catch {format %c 2x} msg
     set msg
 } {expected integer but got "2x"}
 test format-8.15 {error conditions} {
     catch {format %f 2.1z}
 } 1
-test format-8.16 {error conditions} {
+test format-8.16 {error conditions} {fails} {
     catch {format %f 2.1z} msg
     set msg
 } {expected floating-point number but got "2.1z"}
-test format-8.17 {error conditions} {
+test format-8.17 {error conditions} {fails} {
     catch {format ab%}
 } 1
-test format-8.18 {error conditions} {
+test format-8.18 {error conditions} {fails} {
     catch {format ab% 12} msg
     set msg
 } {format string ended in middle of field specifier}
-test format-8.19 {error conditions} {
+test format-8.19 {error conditions} {fails} {
     catch {format %q x}
 } 1
-test format-8.20 {error conditions} {
+test format-8.20 {error conditions} {fails} {
     catch {format %q x} msg
     set msg
 } {bad field specifier "q"}
@@ -364,7 +363,7 @@ test format-8.22 {error conditions} {
     catch {format %d} msg
     set msg
 } {not enough arguments for all format specifiers}
-test format-8.23 {error conditions} {
+test format-8.23 {error conditions} {fails} {
     catch {format "%d %d" 24 xyz} msg
     set msg
 } {expected integer but got "xyz"}
@@ -374,20 +373,20 @@ test format-9.1 {long result} {
     format {1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG %s %s} $a $a
 } {1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG 1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z 1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ 1 2 3 4 5 6 7 8 9 0 a b c d e f g h i j k l m n o p q r s t u v w x y z A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
 
-test format-10.1 {"h" format specifier} {
+test format-10.1 {"h" format specifier} {fails} {
     format %hd 0xffff
 } -1
-test format-10.2 {"h" format specifier} {
+test format-10.2 {"h" format specifier} {fails} {
     format %hx 0x10fff
 } fff
-test format-10.3 {"h" format specifier} {
+test format-10.3 {"h" format specifier} {fails} {
     format %hd 0x10000
 } 0
 test format-10.4 {"h" format specifier} {
     # Bug 1154163: This is minimal behaviour for %hx specifier!
     format %hx 1
 } 1
-test format-10.5 {"h" format specifier} {
+test format-10.5 {"h" format specifier} {fails} {
     # Bug 1284178: Highly out-of-range values shouldn't cause errors
     format %hu 0x100000000
 } 0
@@ -416,16 +415,16 @@ test format-11.7 {XPG3 %$n specifiers} {
 test format-11.8 {XPG3 %$n specifiers} {
     format {%2$*d %3$d} 1 10 4
 } {         4 4}
-test format-11.9 {XPG3 %$n specifiers} {
+test format-11.9 {XPG3 %$n specifiers} {fails} {
     format {%2$.*s %4$d} 1 5 abcdefghijklmnop 44
 } {abcde 44}
 test format-11.10 {XPG3 %$n specifiers} {
     list [catch {format {%2$*d} 4} msg] $msg
 } {1 {"%n$" argument index out of range}}
-test format-11.11 {XPG3 %$n specifiers} ignoreKnownProblem {
+test format-11.11 {XPG3 %$n specifiers} {
     list [catch {format {%2$*d} 4 5} msg] $msg
 } {1 {"%n$" argument index out of range}}
-test format-11.12 {XPG3 %$n specifiers} {
+test format-11.12 {XPG3 %$n specifiers} {fails} {
     list [catch {format {%2$*d} 4 5 6} msg] $msg
 } {0 {    6}}
 
@@ -473,7 +472,7 @@ test format-13.4 {tcl_precision fuzzy comparison} {
     set c [expr $a + $b]
     format {%0.10f %0.12f %0.15f %0.16f} $c $c $c $c
 } {0.7777777778 0.777777777777 0.777777777777330 0.7777777777773300}
-test format-13.5 {tcl_precision fuzzy comparison} {
+test format-13.5 {tcl_precision fuzzy comparison} {fails} {
     catch {unset a}
     catch {unset b}
     catch {unset c}
@@ -499,10 +498,10 @@ test format-15.2 {testing %0..s 0 padding for chars/strings} {
 test format-15.3 {testing %0..s 0 padding for chars/strings} {
     format %5s a
 } {    a}
-test format-15.4 {testing %0..s 0 padding for chars/strings} ignoreKnownProblem  {
+test format-15.4 {testing %0..s 0 padding for chars/strings} {
     format %05c 61
 } {0000=}
-test format-15.5 {testing %d space padding for integers}  ignoreKnownProblem {
+test format-15.5 {testing %d space padding for integers} {
     format "(% 1d) (% 1d)" 10 -10
 } {( 10) (-10)}
 test format-15.6 {testing %d plus padding for integers} {
@@ -521,10 +520,10 @@ for {set i 290} {$i < 400} {incr i} {
     append b "x"
 }
 
-test format-17.1 {testing %d with wide} {wideIs64bit wideBiggerThanInt} {
+test format-17.1 {testing %d with wide} {fails wideIs64bit wideBiggerThanInt} {
     format %d 7810179016327718216
 } 1819043144
-test format-17.2 {testing %ld with wide} {wideIs64bit} {
+test format-17.2 {testing %ld with wide} {fails wideIs64bit} {
     format %ld 7810179016327718216
 } 7810179016327718216
 test format-17.3 {testing %ld with non-wide} {wideIs64bit} {
@@ -548,38 +547,36 @@ test format-18.1 {do not demote existing numeric values} {
     format %08x $b
     lappend result [expr {$a == $b}]
 } {1 1 1 1}
-test format-18.2 {do not demote existing numeric values} {wideBiggerThanInt} {
+test format-18.2 {do not demote existing numeric values} {fails wideBiggerThanInt} {
     set a [expr {0xaaaaaaaaaa + 1}]
     set b 0xaaaaaaaaab
     list [format %08x $a] [expr {$a == $b}]
 } {aaaaaaab 1}
 
-test format-19.1 {regression test - tcl-core message by Brian Griffin on 26 0ctober 2004} -constraints ignoreKnownProblem  -body {
+test format-19.1 {regression test - tcl-core message by Brian Griffin on 26 0ctober 2004} -constraints fails  -body {
     set x 0x8fedc654
     list [expr { ~ $x }] [format %08x [expr { ~$x }]]
 } -match regexp -result {-2414724693 f*701239ab}
 test format-19.2 {Bug 1867855} ignoreKnownProblem {
     format %llx 0
 } 0
-test format-19.3 {Bug 2830354} {
+test format-19.3 {Bug 2830354} {fails} {
     string length [format %340f 0]
 } 340
 
 # Note that this test may fail in future versions
-test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -constraints ignoreUnimplemented -body {
+test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -constraints fails -body {
     set x [dict create a b c d]
     format %s $x
     # After this, obj in $x should be a dict with a non-NULL bytes field
     tcl::unsupported::representation $x
 } -match glob -result {value is a dict with *, string representation "*"}
-
+
 # cleanup
 catch {unset a}
 catch {unset b}
 catch {unset c}
 catch {unset d}
-::tcltest::cleanupTests
-return
 
 # Local Variables:
 # mode: tcl

@@ -136,7 +136,7 @@ test if-old-4.4 {error conditions} {fails} {
 test if-old-4.5 {error conditions} {fails} {
     list [catch {if 2 the} msg] $msg
 } {1 {invalid command name "the"}}
-test if-old-4.6 {error conditions} {fails} {
+test if-old-4.6 {error conditions} {
     list [catch {if 2 then {[error "error in then clause"]}} msg] $msg
 } {1 {error in then clause}}
 test if-old-4.7 {error conditions} {fails} {

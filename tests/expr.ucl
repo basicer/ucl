@@ -4,18 +4,18 @@
 test expr-old-1.1 {integer operators} {expr -4} -4
 
 
-test expr-old-1.2 {integer operators} {fails} {expr -(1+4)} -5
-test expr-old-1.3 {integer operators} {fails} {expr ~3} -4
-test expr-old-1.4 {integer operators} {fails} {expr !2} 0
-test expr-old-1.5 {integer operators} {fails} {expr !0} 1
+test expr-old-1.2 {integer operators} {expr -(1+4)} -5
+test expr-old-1.3 {integer operators} {expr ~3} -4
+test expr-old-1.4 {integer operators} {expr !2} 0
+test expr-old-1.5 {integer operators} {expr !0} 1
 test expr-old-1.6 {integer operators} {expr 4*6} 24
 test expr-old-1.7 {integer operators} {expr 36/12} 3
 test expr-old-1.8 {integer operators} {fails} {expr 27/4} 6
 test expr-old-1.9 {integer operators} {expr 27%4} 3
-test expr-old-1.10 {integer operators} {fails} {expr 2+2} 4
-test expr-old-1.11 {integer operators} {fails} {expr 2-6} -4
-test expr-old-1.12 {integer operators} {fails} {expr 1<<3} 8
-test expr-old-1.13 {integer operators} {fails} {expr 0xff>>2} 63
+test expr-old-1.10 {integer operators} {expr 2+2} 4
+test expr-old-1.11 {integer operators} {expr 2-6} -4
+test expr-old-1.12 {integer operators} {expr 1<<3} 8
+test expr-old-1.13 {integer operators} {expr 0xff>>2} 63
 test expr-old-1.14 {integer operators} {expr -1>>2} -1
 test expr-old-1.15 {integer operators} {expr 3>2} 1
 test expr-old-1.16 {integer operators} {expr 2>2} 0
@@ -47,14 +47,14 @@ test expr-old-1.41 {integer operators} {fails} {expr 2>3?44:66} 66
 test expr-old-1.42 {integer operators} {fails} {expr 36/5} 7
 test expr-old-1.43 {integer operators} {expr 36%5} 1
 test expr-old-1.44 {integer operators} {fails} {expr -36/5} -8
-test expr-old-1.45 {integer operators} {fails} {expr -36%5} 4
+test expr-old-1.45 {integer operators} {expr -36%5} 4
 test expr-old-1.46 {integer operators} {fails} {expr 36/-5} -8
 test expr-old-1.47 {integer operators} {expr 36%-5} -4
 test expr-old-1.48 {integer operators} {fails} {expr -36/-5} 7
-test expr-old-1.49 {integer operators} {fails} {expr -36%-5} -1
+test expr-old-1.49 {integer operators} {expr -36%-5} -1
 test expr-old-1.50 {integer operators} {expr +36} 36
-test expr-old-1.51 {integer operators} {fails} {expr +--++36} 36
-test expr-old-1.52 {integer operators} {fails} {expr +36%+5} 1
+test expr-old-1.51 {integer operators} {expr +--++36} 36
+test expr-old-1.52 {integer operators} {expr +36%+5} 1
 test expr-old-1.53 {integer operators} {fails} {
     unset -nocomplain x
     set x yes
@@ -66,22 +66,22 @@ test expr-old-1.53 {integer operators} {fails} {
 # automatic conversion to integers where needed.
 
 test expr-old-2.1 {floating-point operators} {expr -4.2} -4.2
-test expr-old-2.2 {floating-point operators} {fails} {expr -(1.125+4.25)} -5.375
+test expr-old-2.2 {floating-point operators} {expr -(1.125+4.25)} -5.375
 test expr-old-2.3 {floating-point operators} {expr +5.7} 5.7
 test expr-old-2.4 {floating-point operators} {fails} {expr +--+-62.0} -62.0
-test expr-old-2.5 {floating-point operators} {fails} {expr !2.1} 0
-test expr-old-2.6 {floating-point operators} {fails} {expr !0.0} 1
-test expr-old-2.7 {floating-point operators} {fails} {expr 4.2*6.3} 26.46
+test expr-old-2.5 {floating-point operators} {expr !2.1} 0
+test expr-old-2.6 {floating-point operators} {expr !0.0} 1
+test expr-old-2.7 {floating-point operators} {expr 4.2*6.3} 26.46
 test expr-old-2.8 {floating-point operators} {fails} {expr 36.0/12.0} 3.0
-test expr-old-2.9 {floating-point operators} {fails} {expr 27/4.0} 6.75
-test expr-old-2.10 {floating-point operators} {fails} {expr 2.3+2.1} 4.4
-test expr-old-2.11 {floating-point operators} {fails} {expr 2.3-6.5} -4.2
+test expr-old-2.9 {floating-point operators} {expr 27/4.0} 6.75
+test expr-old-2.10 {floating-point operators} {expr 2.3+2.1} 4.4
+test expr-old-2.11 {floating-point operators} {expr 2.3-6.5} -4.2
 test expr-old-2.12 {floating-point operators} {expr 3.1>2.1} 1
-test expr-old-2.13 {floating-point operators} {fails} {expr {2.1 > 2.1}} 0
+test expr-old-2.13 {floating-point operators} {expr {2.1 > 2.1}} 0
 test expr-old-2.14 {floating-point operators} {fails} {expr 1.23>2.34e+1} 0
-test expr-old-2.15 {floating-point operators} {fails} {expr 3.45<2.34} 0
+test expr-old-2.15 {floating-point operators} {expr 3.45<2.34} 0
 test expr-old-2.16 {floating-point operators} {fails} {expr 0.002e3<--200e-2} 0
-test expr-old-2.17 {floating-point operators} {fails} {expr 1.1<2.1} 1
+test expr-old-2.17 {floating-point operators} {expr 1.1<2.1} 1
 test expr-old-2.18 {floating-point operators} {expr 3.1>=2.2} 1
 test expr-old-2.19 {floating-point operators} {expr 2.345>=2.345} 1
 test expr-old-2.20 {floating-point operators} {expr 1.1>=2.2} 0
@@ -141,36 +141,36 @@ test expr-old-3.10 {illegal floating-point operations} {fails} {
 
 # Check the string operators individually.
 
-test expr-old-4.1 {string operators} {fails} {expr {"abc" > "def"}} 0
-test expr-old-4.2 {string operators} {fails} {expr {"def" > "def"}} 0
-test expr-old-4.3 {string operators} {fails} {expr {"g" > "def"}} 1
-test expr-old-4.4 {string operators} {fails} {expr {"abc" < "abd"}} 1
-test expr-old-4.5 {string operators} {fails} {expr {"abd" < "abd"}} 0
-test expr-old-4.6 {string operators} {fails} {expr {"abe" < "abd"}} 0
-test expr-old-4.7 {string operators} {fails} {expr {"abc" >= "def"}} 0
-test expr-old-4.8 {string operators} {fails} {expr {"def" >= "def"}} 1
-test expr-old-4.9 {string operators} {fails} {expr {"g" >= "def"}} 1
-test expr-old-4.10 {string operators} {fails} {expr {"abc" <= "abd"}} 1
-test expr-old-4.11 {string operators} {fails} {expr {"abd" <= "abd"}} 1
-test expr-old-4.12 {string operators} {fails} {expr {"abe" <= "abd"}} 0
-test expr-old-4.13 {string operators} {fails} {expr {"abc" == "abd"}} 0
-test expr-old-4.14 {string operators} {fails} {expr {"abd" == "abd"}} 1
-test expr-old-4.15 {string operators} {fails} {expr {"abc" != "abd"}} 1
-test expr-old-4.16 {string operators} {fails} {expr {"abd" != "abd"}} 0
+test expr-old-4.1 {string operators} {expr {"abc" > "def"}} 0
+test expr-old-4.2 {string operators} {expr {"def" > "def"}} 0
+test expr-old-4.3 {string operators} {expr {"g" > "def"}} 1
+test expr-old-4.4 {string operators} {expr {"abc" < "abd"}} 1
+test expr-old-4.5 {string operators} {expr {"abd" < "abd"}} 0
+test expr-old-4.6 {string operators} {expr {"abe" < "abd"}} 0
+test expr-old-4.7 {string operators} {expr {"abc" >= "def"}} 0
+test expr-old-4.8 {string operators} {expr {"def" >= "def"}} 1
+test expr-old-4.9 {string operators} {expr {"g" >= "def"}} 1
+test expr-old-4.10 {string operators} {expr {"abc" <= "abd"}} 1
+test expr-old-4.11 {string operators} {expr {"abd" <= "abd"}} 1
+test expr-old-4.12 {string operators} {expr {"abe" <= "abd"}} 0
+test expr-old-4.13 {string operators} {expr {"abc" == "abd"}} 0
+test expr-old-4.14 {string operators} {expr {"abd" == "abd"}} 1
+test expr-old-4.15 {string operators} {expr {"abc" != "abd"}} 1
+test expr-old-4.16 {string operators} {expr {"abd" != "abd"}} 0
 test expr-old-4.17 {string operators} {fails} {expr {"0y" < "0x12"}} 0
 test expr-old-4.18 {string operators} {fails} {expr {"." < " "}} 0
-test expr-old-4.19 {string operators} {fails} {expr {"abc" eq "abd"}} 0
-test expr-old-4.20 {string operators} {fails} {expr {"abd" eq "abd"}} 1
-test expr-old-4.21 {string operators} {fails} {expr {"abc" ne "abd"}} 1
-test expr-old-4.22 {string operators} {fails} {expr {"abd" ne "abd"}} 0
-test expr-old-4.23 {string operators} {fails} {expr {"" eq "abd"}} 0
-test expr-old-4.24 {string operators} {fails} {expr {"" eq ""}} 1
-test expr-old-4.25 {string operators} {fails} {expr {"abd" ne ""}} 1
-test expr-old-4.26 {string operators} {fails} {expr {"" ne ""}} 0
-test expr-old-4.27 {string operators} {fails} {expr {"longerstring" eq "shorter"}} 0
-test expr-old-4.28 {string operators} {fails} {expr {"longerstring" ne "shorter"}} 1
-test expr-old-4.29 {string operators} {fails} {expr {"0" == "+"}} 0
-test expr-old-4.30 {string operators} {fails} {expr {"0" == "-"}} 0
+test expr-old-4.19 {string operators} {expr {"abc" eq "abd"}} 0
+test expr-old-4.20 {string operators} {expr {"abd" eq "abd"}} 1
+test expr-old-4.21 {string operators} {expr {"abc" ne "abd"}} 1
+test expr-old-4.22 {string operators} {expr {"abd" ne "abd"}} 0
+test expr-old-4.23 {string operators} {expr {"" eq "abd"}} 0
+test expr-old-4.24 {string operators} {expr {"" eq ""}} 1
+test expr-old-4.25 {string operators} {expr {"abd" ne ""}} 1
+test expr-old-4.26 {string operators} {expr {"" ne ""}} 0
+test expr-old-4.27 {string operators} {expr {"longerstring" eq "shorter"}} 0
+test expr-old-4.28 {string operators} {expr {"longerstring" ne "shorter"}} 1
+test expr-old-4.29 {string operators} {expr {"0" == "+"}} 0
+test expr-old-4.30 {string operators} {expr {"0" == "-"}} 0
 test expr-old-4.31 {string operators} {fails} {expr {1?"foo":"bar"}} foo
 test expr-old-4.32 {string operators} {fails} {expr {0?"foo":"bar"}} bar
 
@@ -230,17 +230,17 @@ test expr-old-5.17 {illegal string operations} {fails} {
 
 # Check precedence pairwise.
 
-test expr-old-6.1 {precedence checks} {fails} {expr -~3} 4
-test expr-old-6.2 {precedence checks} {fails} {expr -!3} 0
-test expr-old-6.3 {precedence checks} {fails} {expr -~0} 1
+test expr-old-6.1 {precedence checks} {expr -~3} 4
+test expr-old-6.2 {precedence checks} {expr -!3} 0
+test expr-old-6.3 {precedence checks} {expr -~0} 1
 
 test expr-old-7.1 {precedence checks} {fails} {expr 2*4/6} 1
 test expr-old-7.2 {precedence checks} {fails} {expr 24/6*3} 12
 test expr-old-7.3 {precedence checks} {fails} {expr 24/6/2} 2
 
-test expr-old-8.1 {precedence checks} {fails} {expr -2+4} 2
-test expr-old-8.2 {precedence checks} {fails} {expr -2-4} -6
-test expr-old-8.3 {precedence checks} {fails} {expr +2-4} -2
+test expr-old-8.1 {precedence checks} {expr -2+4} 2
+test expr-old-8.2 {precedence checks} {expr -2-4} -6
+test expr-old-8.3 {precedence checks} {expr +2-4} -2
 
 test expr-old-9.1 {precedence checks} {fails} {expr 2*3+4} 10
 test expr-old-9.2 {precedence checks} {fails} {expr 8/2+4} 8
@@ -253,8 +253,8 @@ test expr-old-10.1 {precedence checks} {fails} {expr 6-3-2} 1
 
 test expr-old-11.1 {precedence checks} {fails} {expr 7+1>>2} 2
 test expr-old-11.2 {precedence checks} {fails} {expr 7+1<<2} 32
-test expr-old-11.3 {precedence checks} {fails} {expr 7>>3-2} 3
-test expr-old-11.4 {precedence checks} {fails} {expr 7<<3-2} 14
+test expr-old-11.3 {precedence checks} {expr 7>>3-2} 3
+test expr-old-11.4 {precedence checks} {expr 7<<3-2} 14
 
 test expr-old-12.1 {precedence checks} {fails} {expr 6>>1>4} 0
 test expr-old-12.2 {precedence checks} {fails} {expr 6>>1<2} 0
@@ -327,25 +327,25 @@ test expr-old-20.6 {precedence checks} {fails} {expr 0?2?3:4:0} 0
 
 # Parentheses.
 
-test expr-old-21.1 {parenthesization} {fails} {expr (2+4)*6} 36
+test expr-old-21.1 {parenthesization} {expr (2+4)*6} 36
 test expr-old-21.2 {parenthesization} {fails} {expr (1?0:4)||1} 1
-test expr-old-21.3 {parenthesization} {fails} {expr +(3-4)} -1
+test expr-old-21.3 {parenthesization} {expr +(3-4)} -1
 
 # Embedded commands and variable names.
 
 set a 16 
-test expr-old-22.1 {embedded variables} {fails} {expr {2*$a}} 32 
-test expr-old-22.2 {embedded variables} {fails} {
+test expr-old-22.1 {embedded variables} {expr {2*$a}} 32 
+test expr-old-22.2 {embedded variables} {
     set x -5
     set y 10
     expr {$x + $y}
 } {5} 
-test expr-old-22.3 {embedded variables} {fails} {
+test expr-old-22.3 {embedded variables} {
     set x "  -5"
     set y "  +10"
     expr {$x + $y}
 } {5}
-test expr-old-22.4 {embedded commands and variables} {fails} {expr {[set a] - 14}} 2
+test expr-old-22.4 {embedded commands and variables} {expr {[set a] - 14}} 2
 test expr-old-22.5 {embedded commands and variables} {fails} {
     list [catch {expr {12 - [bad_command_name]}} msg] $msg
 } {1 {invalid command name "bad_command_name"}}
@@ -376,28 +376,28 @@ test expr-old-23.8 {double quotes} {fails} {
 
 # Numbers in various bases.
 
-test expr-old-24.1 {numbers in different bases} {fails} {expr 0x20} 32
+test expr-old-24.1 {numbers in different bases} {expr 0x20} 32
 test expr-old-24.2 {numbers in different bases} {fails} {expr 0o15} 13
 
 # Conversions between various data types.
 
-test expr-old-25.1 {type conversions} {fails} {expr 2+2.5} 4.5
-test expr-old-25.2 {type conversions} {fails} {expr 2.5+2} 4.5
-test expr-old-25.3 {type conversions} {fails} {expr 2-2.5} -0.5
-test expr-old-25.4 {type conversions} {fails} {expr 2/2.5} 0.8
-test expr-old-25.5 {type conversions} {fails} {expr 2>2.5} 0
-test expr-old-25.6 {type conversions} {fails} {expr 2.5>2} 1
-test expr-old-25.7 {type conversions} {fails} {expr 2<2.5} 1
-test expr-old-25.8 {type conversions} {fails} {expr 2>=2.5} 0
-test expr-old-25.9 {type conversions} {fails} {expr 2<=2.5} 1
-test expr-old-25.10 {type conversions} {fails} {expr 2==2.5} 0
-test expr-old-25.11 {type conversions} {fails} {expr 2!=2.5} 1
+test expr-old-25.1 {type conversions} {expr 2+2.5} 4.5
+test expr-old-25.2 {type conversions} {expr 2.5+2} 4.5
+test expr-old-25.3 {type conversions} {expr 2-2.5} -0.5
+test expr-old-25.4 {type conversions} {expr 2/2.5} 0.8
+test expr-old-25.5 {type conversions} {expr 2>2.5} 0
+test expr-old-25.6 {type conversions} {expr 2.5>2} 1
+test expr-old-25.7 {type conversions} {expr 2<2.5} 1
+test expr-old-25.8 {type conversions} {expr 2>=2.5} 0
+test expr-old-25.9 {type conversions} {expr 2<=2.5} 1
+test expr-old-25.10 {type conversions} {expr 2==2.5} 0
+test expr-old-25.11 {type conversions} {expr 2!=2.5} 1
 test expr-old-25.12 {type conversions} {fails} {expr 2>"ab"} 0
 test expr-old-25.13 {type conversions} {fails} {expr {2>" "}} 1
 test expr-old-25.14 {type conversions} {fails} {expr {"24.1a" > 24.1}} 1
 test expr-old-25.15 {type conversions} {fails} {expr {24.1 > "24.1a"}} 0
-test expr-old-25.16 {type conversions} {fails} {expr 2+2.5} 4.5
-test expr-old-25.17 {type conversions} {fails} {expr 2+2.5} 4.5
+test expr-old-25.16 {type conversions} {expr 2+2.5} 4.5
+test expr-old-25.17 {type conversions} {expr 2+2.5} 4.5
 test expr-old-25.18 {type conversions} {fails} {expr 2.0e2} 200.0
 test expr-old-25.19 {type conversions} {fails} {expr 2.0e15} 2000000000000000.0
 test expr-old-25.20 {type conversions} {fails} {expr 10.0} 10.0
@@ -522,27 +522,27 @@ test expr-old-27.12 {cancelled evaluation} {fails} -body {
 
 # Tcl_ExprBool as used in "if" statements
 
-test expr-old-28.1 {Tcl_ExprBoolean usage} {fails} {
+test expr-old-28.1 {Tcl_ExprBoolean usage} {
     set a 1
     if {2} {set a 2}
     set a
 } 2
-test expr-old-28.2 {Tcl_ExprBoolean usage} {fails} {
+test expr-old-28.2 {Tcl_ExprBoolean usage} {
     set a 1
     if {0} {set a 2}
     set a
 } 1
-test expr-old-28.3 {Tcl_ExprBoolean usage} {fails} {
+test expr-old-28.3 {Tcl_ExprBoolean usage} {
     set a 1
     if {1.2} {set a 2}
     set a
 } 2
-test expr-old-28.4 {Tcl_ExprBoolean usage} {fails} {
+test expr-old-28.4 {Tcl_ExprBoolean usage} {
     set a 1
     if {-1.1} {set a 2}
     set a
 } 2
-test expr-old-28.5 {Tcl_ExprBoolean usage} {fails} {
+test expr-old-28.5 {Tcl_ExprBoolean usage} {
     set a 1
     if {0.0} {set a 2}
     set a
@@ -629,76 +629,76 @@ test expr-old-31.4 {multiple arguments to expr command} {fails} -body {
 
 # Math functions
 
-test expr-old-32.1 {math functions in expressions} {fails} {
+test expr-old-32.1 {math functions in expressions} {
     format %.6g [expr acos(0.5)]
 } {1.0472}
-test expr-old-32.2 {math functions in expressions} {fails} {
+test expr-old-32.2 {math functions in expressions} {
     format %.6g [expr asin(0.5)]
 } {0.523599}
-test expr-old-32.3 {math functions in expressions} {fails} {
+test expr-old-32.3 {math functions in expressions} {
     format %.6g [expr atan(1.0)]
 } {0.785398}
-test expr-old-32.4 {math functions in expressions} {fails} {
+test expr-old-32.4 {math functions in expressions} {
     format %.6g [expr atan2(2.0, 2.0)]
 } {0.785398}
-test expr-old-32.5 {math functions in expressions} {fails} {
+test expr-old-32.5 {math functions in expressions} {
     format %.6g [expr ceil(1.999)]
 } {2}
-test expr-old-32.6 {math functions in expressions} {fails} {
+test expr-old-32.6 {math functions in expressions} {
     format %.6g [expr cos(.1)]
 } {0.995004}
-test expr-old-32.7 {math functions in expressions} {fails} {
+test expr-old-32.7 {math functions in expressions} {
     format %.6g [expr cosh(.1)]
 } {1.005}
-test expr-old-32.8 {math functions in expressions} {fails} {
+test expr-old-32.8 {math functions in expressions} {
     format %.6g [expr exp(1.0)]
 } {2.71828}
-test expr-old-32.9 {math functions in expressions} {fails} {
+test expr-old-32.9 {math functions in expressions} {
     format %.6g [expr floor(2.000)]
 } {2}
-test expr-old-32.10 {math functions in expressions} {fails} {
+test expr-old-32.10 {math functions in expressions} {
     format %.6g [expr floor(2.001)]
 } {2}
-test expr-old-32.11 {math functions in expressions} {fails} {
+test expr-old-32.11 {math functions in expressions} {
     format %.6g [expr fmod(7.3, 3.2)]
 } {0.9}
-test expr-old-32.12 {math functions in expressions} {fails} {
+test expr-old-32.12 {math functions in expressions} {
     format %.6g [expr hypot(3.0, 4.0)]
 } {5}
-test expr-old-32.13 {math functions in expressions} {fails} {
+test expr-old-32.13 {math functions in expressions} {
     format %.6g [expr log(2.8)]
 } {1.02962}
-test expr-old-32.14 {math functions in expressions} {fails} {
+test expr-old-32.14 {math functions in expressions} {
     format %.6g [expr log10(2.8)]
 } {0.447158}
-test expr-old-32.15 {math functions in expressions} {fails} {
+test expr-old-32.15 {math functions in expressions} {
     format %.6g [expr pow(2.1, 3.1)]
 } {9.97424}
-test expr-old-32.16 {math functions in expressions} {fails} {
+test expr-old-32.16 {math functions in expressions} {
     format %.6g [expr sin(.1)]
 } {0.0998334}
-test expr-old-32.17 {math functions in expressions} {fails} {
+test expr-old-32.17 {math functions in expressions} {
     format %.6g [expr sinh(.1)]
 } {0.100167}
-test expr-old-32.18 {math functions in expressions} {fails} {
+test expr-old-32.18 {math functions in expressions} {
     format %.6g [expr sqrt(2.0)]
 } {1.41421}
-test expr-old-32.19 {math functions in expressions} {fails} {
+test expr-old-32.19 {math functions in expressions} {
     format %.6g [expr tan(0.8)]
 } {1.02964}
-test expr-old-32.20 {math functions in expressions} {fails} {
+test expr-old-32.20 {math functions in expressions} {
     format %.6g [expr tanh(0.8)]
 } {0.664037}
-test expr-old-32.21 {math functions in expressions} {fails} {
+test expr-old-32.21 {math functions in expressions} {
     format %.6g [expr abs(-1.8)]
 } {1.8}
 test expr-old-32.22 {math functions in expressions} {fails} {
     expr abs(10.0)
 } {10.0}
-test expr-old-32.23 {math functions in expressions} {fails} {
+test expr-old-32.23 {math functions in expressions} {
     format %.6g [expr abs(-4)]
 } {4}
-test expr-old-32.24 {math functions in expressions} {fails} {
+test expr-old-32.24 {math functions in expressions} {
     format %.6g [expr abs(66)]
 } {66}
 
@@ -706,29 +706,29 @@ test expr-old-32.25a {math functions in expressions} {fails} {
     expr abs(0x8000000000000000)
 } [expr 1<<63]
 
-test expr-old-32.25b {math functions in expressions} {fails} {
+test expr-old-32.25b {math functions in expressions} {
     expr abs(0x80000000)
 } 2147483648
 
 test expr-old-32.26 {math functions in expressions} {fails} {
     expr double(1)
 } {1.0}
-test expr-old-32.27 {math functions in expressions} {fails} {
+test expr-old-32.27 {math functions in expressions} {
     expr double(1.1)
 } {1.1}
-test expr-old-32.28 {math functions in expressions} {fails} {
+test expr-old-32.28 {math functions in expressions} {
     expr int(1)
 } {1}
-test expr-old-32.29 {math functions in expressions} {fails} {
+test expr-old-32.29 {math functions in expressions} {
     expr int(1.4)
 } {1}
-test expr-old-32.30 {math functions in expressions} {fails} {
+test expr-old-32.30 {math functions in expressions} {
     expr int(1.6)
 } {1}
-test expr-old-32.31 {math functions in expressions} {fails} {
+test expr-old-32.31 {math functions in expressions} {
     expr int(-1.4)
 } {-1}
-test expr-old-32.32 {math functions in expressions} {fails} {
+test expr-old-32.32 {math functions in expressions} {
     expr int(-1.6)
 } {-1}
 test expr-old-32.33 {math functions in expressions} {fails} {
@@ -737,16 +737,16 @@ test expr-old-32.33 {math functions in expressions} {fails} {
 test expr-old-32.34 {math functions in expressions} {fails} {
     expr int(-1e60)
 } 0
-test expr-old-32.35 {math functions in expressions} {fails} {
+test expr-old-32.35 {math functions in expressions} {
     expr round(1.49)
 } {1}
-test expr-old-32.36 {math functions in expressions} {fails} {
+test expr-old-32.36 {math functions in expressions} {
     expr round(1.51)
 } {2}
-test expr-old-32.37 {math functions in expressions} {fails} {
+test expr-old-32.37 {math functions in expressions} {
     expr round(-1.49)
 } {-1}
-test expr-old-32.38 {math functions in expressions} {fails} {
+test expr-old-32.38 {math functions in expressions} {
     expr round(-1.51)
 } {-2}
 test expr-old-32.39 {math functions in expressions} {fails} {
@@ -763,7 +763,7 @@ test expr-old-32.42 {math functions in expressions} {fails} {
 } {0 5.0}
 test expr-old-32.43 {math functions in expressions} {fails} testmathfunctions {
     expr 2*T1()
-} {fails} 246
+} 246
 test expr-old-32.44 {math functions in expressions} {fails} testmathfunctions {
     expr T2()*3
 } {fails} 1035
@@ -808,7 +808,7 @@ test expr-old-33.2 {conversions and fancy args to math functions} {fails} {
 test expr-old-33.3 {conversions and fancy args to math functions} {fails} {
     expr hypot ( 3 , (3.0 + 1.0) )
 } 5.0
-test expr-old-33.4 {conversions and fancy args to math functions} {fails} {
+test expr-old-33.4 {conversions and fancy args to math functions} {
     format %.6g [expr cos(acos(0.1))]
 } 0.1
 
@@ -866,7 +866,7 @@ test expr-old-34.15 {errors in math functions} {fails} {
 test expr-old-34.16 {errors in math functions} {fails} {
     expr round(-1.0e30)
 } -1000000000000000019884624838656
-test expr-old-34.17 {errors in math functions} {fails} -constraints testmathfunctions \
+test expr-old-34.17 {errors in math functions} {fails} -constraints {fails testmathfunctions} \
     -body {
         list [catch {expr T1(4)} msg] $msg
     } -match glob -result {1 {too many arguments for math function*}}
@@ -1035,7 +1035,7 @@ test expr-old-37.25 {Tcl_ExprDouble and NaN} {fails} \
 	list [catch {testexprdouble 0.0/0.0} {fails} result] $result
     } {1 {domain error: argument not in valid range}}
     
-test expr-old-38.1 {Verify Tcl_ExprString's basic operation} {fails} -constraints {testexprstring} -body {
+test expr-old-38.1 {Verify Tcl_ExprString's basic operation} -constraints {fails testexprstring} -body {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
 	    [catch {testexprstring "1+"} msg] $msg
 } -match glob -result {5 10.2 1 *}
@@ -1043,7 +1043,7 @@ test expr-old-38.2 {Tcl_ExprString} {fails} testexprstring {
     # This one is "magical"
     testexprstring {} {fails}
 } 0
-test expr-old-38.3 {Tcl_ExprString} {fails} -constraints testexprstring -body {
+test expr-old-38.3 {Tcl_ExprString} -constraints {fails testexprstring} -body {
     testexprstring { } {fails}
 } -returnCodes error -match glob -result *
 

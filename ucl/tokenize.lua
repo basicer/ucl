@@ -4,16 +4,25 @@ local ValueType_String = 2
 local ValueType_RawString = 3
 local ValueType_List = 4
 local ValueType_CommandList = 5
+local ValueType_CompoundString = 6
+local ValueType_Variable = 7
 
 local Value = require('ucl/value')
 
 local function isSpace(c) 
 	return c == ' ' or c == '\n' or c == '\t' or c == '\v' or c == '\r' or c == '\f'
 end
-local function isSpecial(c) 
+
+local function isSeprator(c) 
 	return c == ' ' or c == '\n' or c == '\t' or 
 		c == '\v' or c == '\r' or c == '\f' or
-		c == ';' or c == '#'
+		c == ';'
+end
+
+local function isSpecial(c)
+	return c == ' ' or c == '\n' or c == '\t' or 
+		c == '\v' or c == '\r' or c == '\f' or
+		c == ';' or c == '#' or ']' or '}'
 end
 
 local function readBracedString(s)
@@ -33,22 +42,47 @@ local function readBracedString(s)
 		end
 	until s:done()
 
-	return Value.fromStringView(s.source, left, s.pos - 2, ValueType_RawString)	
+	if s.pos - 2 >= left then
+		return Value.fromStringView(s.source, left, s.pos - 2, ValueType_RawString)	
+	else
+		return Value.none
+	end
+end
+
+local readTCL
+local function readVariable(s)
+	local left = s.pos
+	local paren = 0
+	local brace = 0
+	assert(s:advance() == '$')
+
+	if not s:peek():match("^[{a-zA-Z0-9_]") then
+		return false
+	elseif s:peek() == '{' then
+		while s:advance() ~= '}' do end
+	else
+		repeat
+			local c = s:peek()
+			if paren > 0 then
+				if c == ')' then paren = paren - 1 end
+			else
+				if c == '(' then paren = paren + 1
+				elseif not c:match("^[a-zA-Z0-9_]") then break end
+			end
+			s:advance()
+		until false
+	end
+
+	return Value.fromStringView(s.source, left, s.pos - 1, ValueType_Variable)	
 end
 
 local function readBrackedString(s)
-
 	assert(s:advance() == '[')
 	local left = s.pos
-	local n = 1
-	local c
-	repeat
-		c = s:advance()
-		if s:done() then
-			error("unterminated bracket", 0)
-		end
-	until c == ']'
-
+	local list = readTCL(s)
+	if s:advance() ~= ']' then
+		error('missing close-bracket', 0) 
+	end
 	return Value.fromStringView(s.source, left, s.pos - 2, ValueType_CommandList)	
 end
 
@@ -58,29 +92,101 @@ local function readQuotedString(s)
 	local left = s.pos
 	local n = 1
 	local c
+	local parts = {}
 	repeat
-		c = s:advance()
+		c = s:peek()
 		if c == "\\" then
 			s:advance()
+			s:advance()
+		elseif c == '[' then
+			if s.pos-1 >= left then
+				table.insert(parts, Value.fromStringView(s.source, left, s.pos - 1))
+			end
+			table.insert(parts, readBrackedString(s))
+			left = s.pos - 1
 		elseif s:done() then
 			error("unterminated quote", 0)
+		else
+			s:advance()
 		end
+		
 	until c == '"'
 
+	if s.pos - 2 >= left then
+		table.insert(parts, Value.fromStringView(s.source, left, s.pos - 2))
+	end
+	if #parts == 0 then
+		return Value.none
+	elseif #parts == 1 then
+		return parts[1]
+	else
+		return Value.fromCompoundList(parts)
+	end
+end
 
-	return Value.fromStringView(s.source, left, s.pos - 2)	
+local function continueReadingCompositeString(s, left)
+	local result = {}
+	if s.pos - 1 >= left then
+		table.insert(result, Value.fromStringView(s.source, left, s.pos - 1))
+	end
+	left = s.pos
+	while not isSeprator(s:peek()) and not s:done() do
+		local c = s:peek()
+		if c == ']' then break end
+		if
+				c == '['
+				or c == '$'
+		then
+			if left < s.pos then
+				table.insert(result, Value.fromStringView(s.source, left, s.pos - 1))
+			end
+			if c == '[' then
+				table.insert(result, readBrackedString(s))
+				left = s.pos
+			elseif c == '$' then
+				local v = readVariable(s)
+				if v then
+					table.insert(result, v)
+					left = s.pos
+				end
+			end
+		else
+			local f = s:advance()
+			if f == '\\' then s:advance() end
+		end
+	end
+	if s:done() then return nil end
+	if left < s.pos then
+		table.insert(result, Value.fromStringView(s.source, left, s.pos - 1))
+	end
+	
+	--print('pCPS', #result)
+	return Value.fromCompoundList(result)
 end
 
 local function readBareWord(s)
 	local left = s.pos
-	while not isSpecial(s:peek()) and not s:done() do 
+	local bare = true
+	while not isSeprator(s:peek()) and not s:done() do 
+		local c = s:peek()
+		if c == ']' then break end
+		if c == '[' or c == '$' then
+			return continueReadingCompositeString(s,left)
+		end
 		local f = s:advance()
-		if f == '\\' then s:advance() end
+		if f == '\\' then bare=false s:advance() end
 	 end
 	if s:done() then return nil end
 	--if s.pos - 1 <= left then return nil end
 
-	return Value.fromStringView(s.source, left, s.pos - 1)
+	if left > s.pos - 1 then
+		return Value.fromString("") -- wat?
+	elseif bare then
+		--print("Source is", s.source)
+		return Value.fromStringView(s.source, left, s.pos - 1, ValueType_RawString)
+	else
+		return Value.fromStringView(s.source, left, s.pos - 1)
+	end
 end
 
 local function readToken(s)
@@ -92,25 +198,20 @@ local function readToken(s)
 		r = readBrackedString(s)
 	elseif c == '"' then
 		r = readQuotedString(s)
+		if not isSpecial(s:peek()) then error('extra characters after close-quote', 0) end 
 	else
 		r = readBareWord(s)
 	end
 	return r
 end
 
-local function tok(inp)
-	if type(inp) ~= "table" then inp = Value.fromString(inp) end
-
-	if false then return tokenize(inp) end
-
-	local s = inp:scanner()
+readTCL = function(s)
 	local lines = {}
 	local line = {}
 	while not s:done() do
 		while s:peek() ~= '\n' and isSpace(s:peek()) and not s:done() do s:advance() end
-		if s:peek() == '#' then
-			while s:peek() ~= '\n' do s:advance() end
-		elseif s:peek() == '\n' or s:peek() == ';' then
+		if s:peek() == ']' then break end
+		if s:peek() == '\n' or s:peek() == ';' then
 			s:advance()
 			if #line > 0 then table.insert(lines, Value.fromList(line)) end
 			line = {}
@@ -121,6 +222,16 @@ local function tok(inp)
 			end
 		end
 	end
+	return lines
+end
+
+local function tok(inp)
+	if type(inp) ~= "table" then inp = Value.fromString(inp) end
+
+	if false then return tokenize(inp) end
+
+	local s = inp:scanner()
+	local lines = readTCL(s)
 
 	if false then 
 		print("Parsed " .. #lines .. " lines")
@@ -135,5 +246,49 @@ local function tok(inp)
 	return lines
 end
 
+local function expr(code)
+	local i = 1
+	local tokens = {}
+	while i <= #code do
+		local a, b
 
-return tok
+		local sa, sb = code:find('^[%s\n]+', i)
+		if sa then 
+			i = sb + 1
+		end
+
+		local a, b = code:find("^[a-z][a-z0-9]*%(", i)
+		if a then
+			table.insert(tokens, {type='function', name=code:sub(a,b-1)})
+			i = b + 1
+		elseif code:sub(i,i) == "$" then
+			a, b = code:find("^%$[a-z0-9()_]+", i)
+			table.insert(tokens, {type='variable', name=code:sub(a+1,b)})
+			i = b + 1
+		elseif code:sub(i,i) == "[" then
+			local yikes = Value.fromStringView(code, i, #code)
+			local s = yikes:scanner()
+			table.insert(tokens, {type='cmd', value=readBrackedString(s)})
+			i = s.pos
+		else
+			if not a then a,b = code:find('^,', i) end
+			if not a then a,b = code:find('^0[xo][0-9A-Fa-f]+', i) end
+			if not a then a,b = code:find('^[0-9]*%.[0-9]*', i) end
+			if not a then a,b = code:find('^[0-9%.]+e%+?[0-9]+', i) end
+			if not a then a,b = code:find('^[0-9]+', i) end
+			if not a then a,b = code:find('^%*%*?', i) end
+			if not a then a,b = code:find('^[~!+%-%*/<>=()%%][<>=]?', i) end
+			if not a then a,b = code:find('^[^%s]+', i) end
+
+			if a then
+				table.insert(tokens, code:sub(a,b))
+				i = b + 1
+			end
+		end
+
+	end
+	return tokens
+end
+
+
+return {tokenize = tok, expr = expr}

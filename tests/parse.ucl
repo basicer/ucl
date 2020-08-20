@@ -39,7 +39,7 @@ test parseOld-2.2 {quotes and variable-substitution} {
 } {{a101 b c}}
 
 
-test parseOld-2.3 {quotes and variable-substitution} {
+test parseOld-2.3 {quotes and variable-substitution} {fails} {
     set argv "xy[format xabc]"
     set argv
 } {xyxabc}
@@ -92,15 +92,15 @@ test parseOld-3.7 {
 
 # Command substitution.
 
-test parseOld-4.1 {command substitution} {fails} {
+test parseOld-4.1 {command substitution} {
     set a [format xyz]
     set a
 } xyz
-test parseOld-4.2 {command substitution} {fails} {
+test parseOld-4.2 {command substitution} {
     set a a[format xyz]b[format q]
     set a
 } axyzbq
-test parseOld-4.3 {command substitution} {fails} {
+test parseOld-4.3 {command substitution} {
     set a a[
 set b 22;
 format %s $b
@@ -136,7 +136,7 @@ test parseOld-5.4 {variable substitution} {
     set b a${a}b
     set b
 } a78b
-test parseOld-5.5 {variable substitution} {fails} {catch {$_non_existent_} msg} 1
+test parseOld-5.5 {variable substitution} {catch {$_non_existent_} msg} 1
 test parseOld-5.6 {variable substitution} {fails} {
     catch {$_non_existent_} msg
     set msg
@@ -153,7 +153,7 @@ test parseOld-5.8 {array variable substitution} {fails} {
     set b $a(x y z)foo
     set b
 } 123foo
-test parseOld-5.9 {array variable substitution} {fails} ignoreUnimplemented {
+test parseOld-5.9 {array variable substitution} {fails} {
     unset -nocomplain a qqq
     set "a(x y z)" qqq
     set $a([format x]\ y [format z]) foo
@@ -163,7 +163,7 @@ test parseOld-5.10 {array variable substitution} {fails} {
     unset -nocomplain a
     list [catch {set b $a(22)} msg] $msg
 } {1 {can't read "a(22)": no such variable}}
-test parseOld-5.11 {array variable substitution} {fails} {
+test parseOld-5.11 {array variable substitution} {
     set b a$!
     set b
 } {a$!}
@@ -224,13 +224,13 @@ test parseOld-7.5 {backslash substitution} {fails} {
 test parseOld-7.6 {backslash substitution} {fails} {
     eval "concat abc\\"
 } "abc\\"
-test parseOld-7.7 {backslash substitution} {fails} {
+test parseOld-7.7 {backslash substitution} {
     eval "concat \\\na"
 } "a"
-test parseOld-7.8 {backslash substitution} {fails} {
+test parseOld-7.8 {backslash substitution} {
     eval "concat x\\\n   	a"
 } "x a"
-test parseOld-7.9 {backslash substitution} {fails} {
+test parseOld-7.9 {backslash substitution} {
     eval "concat \\x"
 } "x"
 test parseOld-7.10 {backslash substitution} {fails} {
@@ -283,7 +283,7 @@ test parseOld-9.6 {result initialization} {
     concat abc
 }} abc
 test parseOld-9.7 {result initialization} {fails} {} {}
-test parseOld-9.8 {result initialization} {fails} {concat abc; ; ;} abc
+test parseOld-9.8 {result initialization} {concat abc; ; ;} abc
 
 # Syntax errors.
 
@@ -292,7 +292,7 @@ test parseOld-10.2 {syntax errors} {fails} {
 	catch "set a \{bcd" msg
 	set msg
 } {missing close-brace}
-test parseOld-10.3 {syntax errors} {fails} {catch {set a "bcd} msg} 1
+test parseOld-10.3 {syntax errors} {catch {set a "bcd} msg} 1
 test parseOld-10.4 {syntax errors} {fails} {
 	catch {set a "bcd} msg
 	set msg
@@ -310,12 +310,12 @@ test parseOld-10.8 {syntax errors} {fails} {
 	catch "set a {bcd}xy" msg
 	set msg
 } {extra characters after close-brace}
-test parseOld-10.9 {syntax errors} {fails} {catch {set a [format abc} msg} 1
+test parseOld-10.9 {syntax errors} {catch {set a [format abc} msg} 1
 test parseOld-10.10 {syntax errors} {fails} {
 	catch {set a [format abc} msg
 	set msg
 } {missing close-bracket}
-test parseOld-10.11 {syntax errors} {fails} {catch gorp-a-lot msg} 1
+test parseOld-10.11 {syntax errors} {catch gorp-a-lot msg} 1
 test parseOld-10.12 {syntax errors} {fails} {
 	catch gorp-a-lot msg
 	set msg
@@ -395,8 +395,6 @@ test parseOld-11.9 {long values} {fails} {
     llength $a
 } 62
 
-return
-
 set i 0
 foreach j [concat 0000 1111 2222 3333 4444 5555 6666 7777 8888 9999 aaaa bbbb cccc dddd eeee ffff gggg hhhh iiii jjjj kkkk llll mmmm nnnn oooo pppp qqqq rrrr ssss tttt uuuu vvvv wwww xxxx yyyy zzzz AAAA BBBB CCCC DDDD EEEE FFFF GGGG HHHH IIII JJJJ KKKK LLLL MMMM NNNN OOOO PPPP QQQQ RRRR SSSS TTTT UUUU VVVV WWWW XXXX YYYY ZZZZ] {
     set test [string index 0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ $i]
@@ -409,12 +407,12 @@ test parseOld-11.11 {test buffer overflow in backslashes in braces} {fails} {
     expr {"a" == {xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101\101}}
 } 0
 
-test parseOld-12.1 {comments} {fails} {
+test parseOld-12.1 {comments} {
     set a old
     eval {  # set a new}
     set a
 } {old}
-test parseOld-12.2 {comments} {fails} {
+test parseOld-12.2 {comments} {
     set a old
     eval "  # set a new\nset a new"
     set a
@@ -424,7 +422,7 @@ test parseOld-12.3 {comments} {fails} {
     eval "  # set a new\\\nset a new"
     set a
 } {old}
-test parseOld-12.4 {comments} {fails} {
+test parseOld-12.4 {comments} {
     set a old
     eval "  # set a new\\\\\nset a new"
     set a
@@ -439,13 +437,13 @@ expr 1+1
 
 test parseOld-14.1 {TclWordEnd procedure} {fails} {testwordend} {
     testwordend " 	\n abc"
-} {fails} {c}
+} {c}
 test parseOld-14.2 {TclWordEnd procedure} {fails} {testwordend} {
     testwordend "   \\\n"
-} {fails} {}
+} {}
 test parseOld-14.3 {TclWordEnd procedure} {fails} {testwordend} {
     testwordend "   \\\n "
-} {fails} { }
+} { }
 test parseOld-14.4 {TclWordEnd procedure} {fails} {testwordend} {
     testwordend {"abc"} {fails}
 } {"}
@@ -503,12 +501,12 @@ test parseOld-14.21 {TclWordEnd procedure} {fails} {testwordend} {
     testwordend "   \000b"
 } {fails} {b}
 
-test parseOld-15.1 {TclScriptEnd procedure} {fails} ignoreKnownProblem {
+test parseOld-15.1 {TclScriptEnd procedure} {fails} {
     info complete {puts [
 	expr 1+1
 	#this is a comment ]}
 } {0}
-test parseOld-15.2 {TclScriptEnd procedure} {fails} ignoreKnownProblem {
+test parseOld-15.2 {TclScriptEnd procedure} {fails} {
     info complete "abc\\\n"
 } {0}
 test parseOld-15.3 {TclScriptEnd procedure} {fails} {
