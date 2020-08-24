@@ -163,7 +163,11 @@ local function continueReadingCompositeString(s, left)
 	end
 	
 	--print('pCPS', #result)
-	return Value.fromCompoundList(result)
+	if #result > 1 then
+		return Value.fromCompoundList(result)
+	else
+		return result[1]
+	end
 end
 
 local function readBareWord(s)
