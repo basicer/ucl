@@ -50,7 +50,11 @@ local function ucl_eval(code, state)
 			code = Value.none
 		end
 	end
-
+	if state.flags.jit > 0 then
+		local n = rawget(code, "cnt") or 1
+		rawset(code, "cnt", n + 1)
+		if n >= state.flags.jit then return code.execute(state) end
+	end
 	for _,v in pairs(code.cmdlist) do
 		local lst = v.list
 		local mapped = {}
@@ -85,9 +89,11 @@ local function ucl_eval(code, state)
 			for i=2,#lst do
 				mapped[i-1] = x(lst[i], state)
 			end
-			local s = lst[1].string
-			for k,v in pairs(mapped) do s = s .. ',' .. v.string end
+			
+			--local s = lst[1].string
+			--for k,v in pairs(mapped) do s = s .. ',' .. v.string end
 			--print("TRACE", s, unpack(mapped))
+			
 			out, retCode = cmd(state, unpack(mapped))
 			retCode = retCode or ReturnCode_Ok
 
@@ -101,7 +107,7 @@ end
 
 local expr = require('ucl/expr')
 local ucl_expr = function(code, state)
-	return Value.from(expr(code, state))
+	return Value.from(expr.expr(code, state))
 end
 
 local function newstate(engine) 
@@ -111,6 +117,7 @@ local function newstate(engine)
 		variables = globals,
 		globals = globals,
 		level = 0,
+		flags = engine.flags
 	}
 	state.set = function(...) return ucl_set(state, ...) end
 	state.eval = function(s, code) return ucl_eval(code, s) end
@@ -121,8 +128,9 @@ local function newstate(engine)
 			level = self.level + 1,
 			commands = setmetatable({}, {__index = self.commands}),
 			engine = self.engine,
-			variables = setmetatable({}, {__index = self.variables}),
+			variables = setmetatable({}, {__index = self.globals}),
 			child = self.child,
+			flags = self.flags,
 			up = self,
 		}
 		c.eval = function(s, code) return ucl_eval(code, s) end
@@ -142,7 +150,8 @@ end
 function Engine.new()
 	return setmetatable({
 		commands = setmetatable({}, {__index = builtins}),
-		globals = {}
+		globals = {},
+		flags = {jit = 0}
 	}, {
 		__index = Engine
 	})

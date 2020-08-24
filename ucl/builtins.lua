@@ -418,6 +418,7 @@ function builtin.set(interp, key, value, ...)
 	if not key or select('#', ...) > 0 then
 		error('wrong # args: should be "set varName ?newValue?"', 0)
 	end
+	
 	return interp.set(key, value)
 end
 
@@ -465,7 +466,9 @@ end
 
 function builtin.lindex(interp, list, idx)
 	if not idx then return list end
-	return list.list[idx.number + 1]
+	local r = list.list[idx.number + 1]
+	if not r then return Value.none end
+	return r
 end
 function builtin.linsert(interp, list, idx, ...)
 	local ii = idx.number

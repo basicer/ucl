@@ -276,6 +276,14 @@ Value.metaTable = {
 			elseif kind == ValueType_CompoundString then return "CString"
 			elseif kind == ValueType_Variable then return "Variable"
 			end
+		elseif name == 'execute' then
+			local compile, x = require('ucl/compile')
+			local str = compile(self)
+			local v, err = loadstring(str)
+			if v == nil then error(err) end
+			local fn = v()(self, Value)
+			self.execute = fn
+			return fn
 		end
 		error("Index value: " .. name)
 	end,
