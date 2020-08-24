@@ -235,19 +235,19 @@ test expr-old-6.2 {precedence checks} {expr -!3} 0
 test expr-old-6.3 {precedence checks} {expr -~0} 1
 
 test expr-old-7.1 {precedence checks} {fails} {expr 2*4/6} 1
-test expr-old-7.2 {precedence checks} {fails} {expr 24/6*3} 12
-test expr-old-7.3 {precedence checks} {fails} {expr 24/6/2} 2
+test expr-old-7.2 {precedence checks} {expr 24/6*3} 12
+test expr-old-7.3 {precedence checks} {expr 24/6/2} 2
 
 test expr-old-8.1 {precedence checks} {expr -2+4} 2
 test expr-old-8.2 {precedence checks} {expr -2-4} -6
 test expr-old-8.3 {precedence checks} {expr +2-4} -2
 
-test expr-old-9.1 {precedence checks} {fails} {expr 2*3+4} 10
-test expr-old-9.2 {precedence checks} {fails} {expr 8/2+4} 8
-test expr-old-9.3 {precedence checks} {fails} {expr 8%3+4} 6
-test expr-old-9.4 {precedence checks} {fails} {expr 2*3-1} 5
-test expr-old-9.5 {precedence checks} {fails} {expr 8/2-1} 3
-test expr-old-9.6 {precedence checks} {fails} {expr 8%3-1} 1
+test expr-old-9.1 {precedence checks} {expr 2*3+4} 10
+test expr-old-9.2 {precedence checks} {expr 8/2+4} 8
+test expr-old-9.3 {precedence checks} {expr 8%3+4} 6
+test expr-old-9.4 {precedence checks} {expr 2*3-1} 5
+test expr-old-9.5 {precedence checks} {expr 8/2-1} 3
+test expr-old-9.6 {precedence checks} {expr 8%3-1} 1
 
 test expr-old-10.1 {precedence checks} {fails} {expr 6-3-2} 1
 
@@ -256,25 +256,25 @@ test expr-old-11.2 {precedence checks} {fails} {expr 7+1<<2} 32
 test expr-old-11.3 {precedence checks} {expr 7>>3-2} 3
 test expr-old-11.4 {precedence checks} {expr 7<<3-2} 14
 
-test expr-old-12.1 {precedence checks} {fails} {expr 6>>1>4} 0
-test expr-old-12.2 {precedence checks} {fails} {expr 6>>1<2} 0
-test expr-old-12.3 {precedence checks} {fails} {expr 6>>1>=3} 1
-test expr-old-12.4 {precedence checks} {fails} {expr 6>>1<=2} 0
-test expr-old-12.5 {precedence checks} {fails} {expr 6<<1>5} 1
-test expr-old-12.6 {precedence checks} {fails} {expr 6<<1<5} 0
-test expr-old-12.7 {precedence checks} {fails} {expr 5<=6<<1} 1
-test expr-old-12.8 {precedence checks} {fails} {expr 5>=6<<1} 0
+test expr-old-12.1 {precedence checks} {expr 6>>1>4} 0
+test expr-old-12.2 {precedence checks} {expr 6>>1<2} 0
+test expr-old-12.3 {precedence checks} {expr 6>>1>=3} 1
+test expr-old-12.4 {precedence checks} {expr 6>>1<=2} 0
+test expr-old-12.5 {precedence checks} {expr 6<<1>5} 1
+test expr-old-12.6 {precedence checks} {expr 6<<1<5} 0
+test expr-old-12.7 {precedence checks} {expr 5<=6<<1} 1
+test expr-old-12.8 {precedence checks} {expr 5>=6<<1} 0
 
-test expr-old-13.1 {precedence checks} {fails} {expr 2<3<4} 1
-test expr-old-13.2 {precedence checks} {fails} {expr 0<4>2} 0
-test expr-old-13.3 {precedence checks} {fails} {expr 4>2<1} 0
-test expr-old-13.4 {precedence checks} {fails} {expr 4>3>2} 0
-test expr-old-13.5 {precedence checks} {fails} {expr 4>3>=2} 0
-test expr-old-13.6 {precedence checks} {fails} {expr 4>=3>2} 0
-test expr-old-13.7 {precedence checks} {fails} {expr 4>=3>=2} 0
-test expr-old-13.8 {precedence checks} {fails} {expr 0<=4>=2} 0
-test expr-old-13.9 {precedence checks} {fails} {expr 4>=2<=0} 0
-test expr-old-13.10 {precedence checks} {fails} {expr 2<=3<=4} 1
+test expr-old-13.1 {precedence checks} {expr 2<3<4} 1
+test expr-old-13.2 {precedence checks} {expr 0<4>2} 0
+test expr-old-13.3 {precedence checks} {expr 4>2<1} 0
+test expr-old-13.4 {precedence checks} {expr 4>3>2} 0
+test expr-old-13.5 {precedence checks} {expr 4>3>=2} 0
+test expr-old-13.6 {precedence checks} {expr 4>=3>2} 0
+test expr-old-13.7 {precedence checks} {expr 4>=3>=2} 0
+test expr-old-13.8 {precedence checks} {expr 0<=4>=2} 0
+test expr-old-13.9 {precedence checks} {expr 4>=2<=0} 0
+test expr-old-13.10 {precedence checks} {expr 2<=3<=4} 1
 
 test expr-old-14.1 {precedence checks} {expr 1==4>3} 1
 test expr-old-14.2 {precedence checks} {expr 0!=4>3} 1
@@ -284,23 +284,23 @@ test expr-old-14.5 {precedence checks} {expr 1==4>=3} 1
 test expr-old-14.6 {precedence checks} {expr 0!=4>=3} 1
 test expr-old-14.7 {precedence checks} {expr 1==3<=4} 1
 test expr-old-14.8 {precedence checks} {expr 0!=3<=4} 1
-test expr-old-14.9 {precedence checks} {fails} {expr 1eq4>3} 1
-test expr-old-14.10 {precedence checks} {fails} {expr 0ne4>3} 1
-test expr-old-14.11 {precedence checks} {fails} {expr 1eq3<4} 1
-test expr-old-14.12 {precedence checks} {fails} {expr 0ne3<4} 1
-test expr-old-14.13 {precedence checks} {fails} {expr 1eq4>=3} 1
-test expr-old-14.14 {precedence checks} {fails} {expr 0ne4>=3} 1
-test expr-old-14.15 {precedence checks} {fails} {expr 1eq3<=4} 1
-test expr-old-14.16 {precedence checks} {fails} {expr 0ne3<=4} 1
+test expr-old-14.9 {precedence checks} {expr 1eq4>3} 1
+test expr-old-14.10 {precedence checks} {expr 0ne4>3} 1
+test expr-old-14.11 {precedence checks} {expr 1eq3<4} 1
+test expr-old-14.12 {precedence checks} {expr 0ne3<4} 1
+test expr-old-14.13 {precedence checks} {expr 1eq4>=3} 1
+test expr-old-14.14 {precedence checks} {expr 0ne4>=3} 1
+test expr-old-14.15 {precedence checks} {expr 1eq3<=4} 1
+test expr-old-14.16 {precedence checks} {expr 0ne3<=4} 1
 
-test expr-old-15.1 {precedence checks} {fails} {expr 1==3==3} 0
-test expr-old-15.2 {precedence checks} {fails} {expr 3==3!=2} 1
-test expr-old-15.3 {precedence checks} {fails} {expr 2!=3==3} 0
-test expr-old-15.4 {precedence checks} {fails} {expr 2!=1!=1} 0
-test expr-old-15.5 {precedence checks} {fails} {expr 1eq3eq3} 0
-test expr-old-15.6 {precedence checks} {fails} {expr 3eq3ne2} 1
-test expr-old-15.7 {precedence checks} {fails} {expr 2ne3eq3} 0
-test expr-old-15.8 {precedence checks} {fails} {expr 2ne1ne1} 0
+test expr-old-15.1 {precedence checks} {expr 1==3==3} 0
+test expr-old-15.2 {precedence checks} {expr 3==3!=2} 1
+test expr-old-15.3 {precedence checks} {expr 2!=3==3} 0
+test expr-old-15.4 {precedence checks} {expr 2!=1!=1} 0
+test expr-old-15.5 {precedence checks} {expr 1eq3eq3} 0
+test expr-old-15.6 {precedence checks} {expr 3eq3ne2} 1
+test expr-old-15.7 {precedence checks} {expr 2ne3eq3} 0
+test expr-old-15.8 {precedence checks} {expr 2ne1ne1} 0
 
 test expr-old-16.1 {precedence checks} {fails} {expr 2&3eq2} 0
 test expr-old-16.2 {precedence checks} {fails} {expr 1&3ne3} 0
@@ -1002,38 +1002,34 @@ test expr-old-37.16 {Tcl_ExprLong handles overflows} {fails} \
     } \
     -result {1 {integer value too large to represent*}}
 
-test expr-old-37.17 {Check that Tcl_ExprDouble doesn't modify interpreter result if no error} {fails} testexprdouble {
+test expr-old-37.17 {Check that Tcl_ExprDouble doesn't modify interpreter result if no error} {fails testexprdouble} {
     testexprdouble 4.+1.
-} {fails} {This is a result: 5.0}
+} {This is a result: 5.0}
 #Check for [Bug 1109484]
-test expr-old-37.18 {Tcl_ExprDouble on the empty string} {fails} testexprdouble {
+test expr-old-37.18 {Tcl_ExprDouble on the empty string} {fails testexprdouble} {
     testexprdouble ""
-} {fails} {This is a result: 0.0}
-test expr-old-37.19 {Tcl_ExprDouble coerces wides} {fails} testexprdouble {
+} {This is a result: 0.0}
+test expr-old-37.19 {Tcl_ExprDouble coerces wides} {fails testexprdouble} {
     testexprdouble 1[string repeat 0 17]
-} {fails} {This is a result: 1e+17}
-test expr-old-37.20 {Tcl_ExprDouble coerces bignums} {fails} testexprdouble {
+} {This is a result: 1e+17}
+test expr-old-37.20 {Tcl_ExprDouble coerces bignums} {fails testexprdouble} {
     testexprdouble 1[string repeat 0 38]
-} {fails} {This is a result: 1e+38}
-test expr-old-37.21 {Tcl_ExprDouble handles overflows} {fails} testexprdouble {
+} {This is a result: 1e+38}
+test expr-old-37.21 {Tcl_ExprDouble handles overflows} {fails testexprdouble} {
     testexprdouble 17976931348623157[string repeat 0 292].
-} {fails} {This is a result: 1.7976931348623157e+308}
-test expr-old-37.22 {Tcl_ExprDouble handles overflows that look like int} {fails} \
-    testexprdouble {
+} {This is a result: 1.7976931348623157e+308}
+test expr-old-37.22 {Tcl_ExprDouble handles overflows that look like int} {fails testexprdouble} {
 	testexprdouble 17976931348623157[string repeat 0 292]
-    } {fails} {This is a result: 1.7976931348623157e+308}
-test expr-old-37.23 {Tcl_ExprDouble handles overflows} {fails} \
-    ieeeFloatingPoint&&testexprdouble {
+} {This is a result: 1.7976931348623157e+308}
+test expr-old-37.23 {Tcl_ExprDouble handles overflows} {fails ieeeFloatingPoint&&testexprdouble} {
 	testexprdouble 17976931348623165[string repeat 0 292].
-    } {fails} {This is a result: Inf}
-test expr-old-37.24 {Tcl_ExprDouble handles overflows that look like int} {fails} \
-    ieeeFloatingPoint&&testexprdouble {
+} {This is a result: Inf}
+test expr-old-37.24 {Tcl_ExprDouble handles overflows that look like int} {fails ieeeFloatingPoint&&testexprdouble} {
 	testexprdouble 17976931348623165[string repeat 0 292]
-    } {fails} {This is a result: Inf}
-test expr-old-37.25 {Tcl_ExprDouble and NaN} {fails} \
-    {ieeeFloatingPoint testexprdouble} {
-	list [catch {testexprdouble 0.0/0.0} {fails} result] $result
-    } {1 {domain error: argument not in valid range}}
+} {This is a result: Inf}
+test expr-old-37.25 {Tcl_ExprDouble and NaN} {fails ieeeFloatingPoint testexprdouble} {
+	list [catch {testexprdouble 0.0/0.0} result] $result
+} {1 {domain error: argument not in valid range}}
     
 test expr-old-38.1 {Verify Tcl_ExprString's basic operation} -constraints {fails testexprstring} -body {
     list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \

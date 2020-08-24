@@ -16,7 +16,7 @@ end
 local function isSeprator(c) 
 	return c == ' ' or c == '\n' or c == '\t' or 
 		c == '\v' or c == '\r' or c == '\f' or
-		c == ';'
+		c == ';' or c == 'EOF'
 end
 
 local function isSpecial(c)
@@ -67,7 +67,7 @@ local function readVariable(s)
 				if c == ')' then paren = paren - 1 end
 			else
 				if c == '(' then paren = paren + 1
-				elseif not c:match("^[a-zA-Z0-9_]") then break end
+				elseif not c:match("^[a-zA-Z0-9_]$") then break end
 			end
 			s:advance()
 		until false
@@ -152,7 +152,9 @@ local function continueReadingCompositeString(s, left)
 			end
 		else
 			local f = s:advance()
-			if f == '\\' then s:advance() end
+			if f == '\\' then
+				if s:peek() ~= 'EOF' then s:advance() end
+			end
 		end
 	end
 	if s:done() then return nil end
@@ -173,8 +175,11 @@ local function readBareWord(s)
 		if c == '[' or c == '$' then
 			return continueReadingCompositeString(s,left)
 		end
+		if c == '\\' then bare = false end
 		local f = s:advance()
-		if f == '\\' then bare=false s:advance() end
+		if f == '\\' then
+			if s:peek() ~= 'EOF' then s:advance() end
+		end
 	 end
 	if s:done() then return nil end
 	--if s.pos - 1 <= left then return nil end
@@ -211,7 +216,7 @@ readTCL = function(s)
 	while not s:done() do
 		while s:peek() ~= '\n' and isSpace(s:peek()) and not s:done() do s:advance() end
 		if s:peek() == ']' then break end
-		if s:peek() == '\n' or s:peek() == ';' then
+		if s:peek() == '\n' or s:peek() == ';' or s:peek() == 'EOF' then
 			s:advance()
 			if #line > 0 then table.insert(lines, Value.fromList(line)) end
 			line = {}
@@ -277,6 +282,9 @@ local function expr(code)
 			if not a then a,b = code:find('^[0-9%.]+e%+?[0-9]+', i) end
 			if not a then a,b = code:find('^[0-9]+', i) end
 			if not a then a,b = code:find('^%*%*?', i) end
+			if not a then a,b = code:find('^[&|][&|]?', i) end
+			if not a then a,b = code:find('^eq', i) end
+			if not a then a,b = code:find('^ne', i) end
 			if not a then a,b = code:find('^[~!+%-%*/<>=()%%][<>=]?', i) end
 			if not a then a,b = code:find('^[^%s]+', i) end
 

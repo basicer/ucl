@@ -435,71 +435,71 @@ expr 1+1
 ]"
 } {2}
 
-test parseOld-14.1 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.1 {TclWordEnd procedure} {fails testwordend} {
     testwordend " 	\n abc"
 } {c}
-test parseOld-14.2 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.2 {TclWordEnd procedure} {fails testwordend} {
     testwordend "   \\\n"
 } {}
-test parseOld-14.3 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.3 {TclWordEnd procedure} {fails testwordend} {
     testwordend "   \\\n "
 } { }
-test parseOld-14.4 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.4 {TclWordEnd procedure} {fails testwordend} {
     testwordend {"abc"} {fails}
 } {"}
 #" Emacs formatting :^(
-test parseOld-14.5 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.5 {TclWordEnd procedure} {fails testwordend} {
     testwordend {{xyz} {fails}}
 } \}
-test parseOld-14.6 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.6 {TclWordEnd procedure} {fails testwordend} {
     testwordend {{a{} {fails}b{}\}} xyz}
 } "\} xyz"
-test parseOld-14.7 {TclWordEnd procedure} {fails} {testwordend} {
-    testwordend {abc[this is a]def ghi} {fails}
+test parseOld-14.7 {TclWordEnd procedure} {fails testwordend} {
+    testwordend {abc[this is a]def ghi}
 } {f ghi}
-test parseOld-14.8 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.8 {TclWordEnd procedure} {fails testwordend} {
     testwordend "puts\\\n\n  "
 } {fails} "s\\\n\n  "
-test parseOld-14.9 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.9 {TclWordEnd procedure} {fails testwordend} {
     testwordend "puts\\\n   	"
 } {fails} "s\\\n   	"
-test parseOld-14.10 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.10 {TclWordEnd procedure} {fails testwordend} {
     testwordend "puts\\\n   	xyz"
 } {fails} "s\\\n   	xyz"
-test parseOld-14.11 {TclWordEnd procedure} {fails} {testwordend} {
-    testwordend {a$x.$y(a long index) foo} {fails}
+test parseOld-14.11 {TclWordEnd procedure} {fails testwordend} {
+    testwordend {a$x.$y(a long index) foo}
 } ") foo"
-test parseOld-14.12 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.12 {TclWordEnd procedure} {fails testwordend} {
     testwordend {abc; def} {fails}
 } {; def}
-test parseOld-14.13 {TclWordEnd procedure} {fails} {testwordend} {
-    testwordend {abc def} {fails}
+test parseOld-14.13 {TclWordEnd procedure} {fails testwordend} {
+    testwordend {abc def}
 } {c def}
-test parseOld-14.14 {TclWordEnd procedure} {fails} {testwordend} {
-    testwordend {abc	def} {fails}
+test parseOld-14.14 {TclWordEnd procedure} {fails testwordend} {
+    testwordend {abc	def}
 } {c	def}
-test parseOld-14.15 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.15 {TclWordEnd procedure} {fails testwordend} {
     testwordend "abc\ndef"
-} {fails} "c\ndef"
-test parseOld-14.16 {TclWordEnd procedure} {fails} {testwordend} {
+} "c\ndef"
+test parseOld-14.16 {TclWordEnd procedure} {fails testwordend} {
     testwordend "abc"
-} {fails} {c}
-test parseOld-14.17 {TclWordEnd procedure} {fails} {testwordend} {
+} {c}
+test parseOld-14.17 {TclWordEnd procedure} {fails testwordend} {
     testwordend "a\000bc"
-} {fails} {c}
-test parseOld-14.18 {TclWordEnd procedure} {fails} {testwordend} {
+} {c}
+test parseOld-14.18 {TclWordEnd procedure} {fails testwordend} {
     testwordend \[a\000\]
-} {fails} {]}
-test parseOld-14.19 {TclWordEnd procedure} {fails} {testwordend} {
+} {]}
+test parseOld-14.19 {TclWordEnd procedure} {fails testwordend} {
     testwordend \"a\000\"
-} {fails} {"}
+} {"}
 #" Emacs formatting :^(
-test parseOld-14.20 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.20 {TclWordEnd procedure} {fails testwordend} {
     testwordend a{\000} {fails}b
 } {b}
-test parseOld-14.21 {TclWordEnd procedure} {fails} {testwordend} {
+test parseOld-14.21 {TclWordEnd procedure} {fails testwordend} {
     testwordend "   \000b"
-} {fails} {b}
+} {b}
 
 test parseOld-15.1 {TclScriptEnd procedure} {fails} {
     info complete {puts [

@@ -19,6 +19,7 @@ local loaded = {}
 local iofill = {}
 local files = {}
 
+iofill.read = io.read
 iofill.write = io.write
 iofill.glob = function(where, pattern)
 	local results = {}
@@ -51,7 +52,7 @@ local function include(filename)
 	local h = assert(io.open(filename, 'r'))
 	print(filename)
 	local code = h:read('*a')
-	local moduleName = filename:gsub(".lua$", ""):gsub("/init", "")
+	local moduleName = filename:gsub(".lua$", ""):gsub("/init", ""):gsub("/",".")
 	loadstring(code) -- Make sure it compiles
 	out:write("packages['" .. moduleName .. "'] = (function(require, io) ")
 	out:write(code)

@@ -1,7 +1,7 @@
 local Value = require 'ucl/value'
 
-local bit = _G.bit or _G.bit32
-local unpack = table.unpack or _G.unpack or require('bit32')
+local bit = _G.bit or _G.bit32 or require('bit32')
+local unpack = table.unpack or _G.unpack
 
 
 local ops = {
@@ -26,11 +26,14 @@ local ops = {
 	['!='] = { pres = 09, apply = function(a,b) return a ~= b and 1 or 0 end },
 
 
-	['&&'] = { pres = 03, apply = function(a,b) return a and b and 1 or 0 end },
-	['||'] = { pres = 02, apply = function(a,b) return a or b and 1 or 0 end },
+	['&&'] = { pres = 03, apply = function(a,b) return a ~= 0 and b ~= 0 and 1 or 0 end },
+	['||'] = { pres = 02, apply = function(a,b) return a ~= 0 or b ~= 0 and 1 or 0 end },
 
-	['eq'] = { pres =05, apply = function(a,b) return a == b and 1 or 0 end },
-	['ne'] = { pres =05, apply = function(a,b) return a ~= b and 1 or 0 end }
+	['&'] = { pres = 06, apply = bit.band },
+	['|'] = { pres = 04, apply = bit.bor },
+
+	['eq'] = { pres =07, apply = function(a,b) return a == b and 1 or 0 end },
+	['ne'] = { pres =07, apply = function(a,b) return a ~= b and 1 or 0 end }
 }
 
 local mathfx = {
@@ -58,6 +61,8 @@ local mathfx = {
 	sqrt  = math.sqrt,
 	hypot = function(a,b) return math.sqrt(a*a + b*b) end,
 	double = tonumber,
+	min = math.min,
+	max = math.max,
 	-- hypot = math.hypot,
 }
 
@@ -123,7 +128,7 @@ local function climber(tokens, max, v)
 		if op.pres < max then return acc end
 
 		tokens.take()
-		local right, reason = climber(tokens, op.pres - 1, v)
+		local right, reason = climber(tokens, op.pres + 1, v)
 		acc = op.apply(acc, right)
 
 		if reason then return acc, reason end

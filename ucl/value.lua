@@ -17,7 +17,7 @@ function Scanner:advance()
 	return a, b
 end
 function Scanner:peek()
-	if self.pos == self.right + 1 then return '\n', self.pos end
+	if self.pos == self.right + 1 then return 'EOF', self.pos end
 	if self.pos > self.right + 1 then return nil, self.pos end
 	return self.source:sub(self.pos, self.pos), self.pos
 end
@@ -28,8 +28,77 @@ function Scanner:reverse()
 	self.pos = self.pos - 1
 end
 
+local function escapePlan(m)
+	if #m == 0 then return '{}' end
+	
+	local hasSpecial = nil ~= m:find("[ %[%]$\";%\\\r\n\f\z\v\t]")
+	local hasBrace = nil ~= m:find("[{}]")
 
+	if not hasSpecial and not hasBrace then
+		return ''
+	end
 
+	local complex =  m:sub(1,1) == '{' or m:sub(1,1) == '"'
+
+	local bc, cc = 0, 0
+	local prev = ''
+	for i=1,#m do
+		local c = m:sub(i,i)
+		if prev ~= '\\' then
+			if c == '{' then
+				cc = cc + 1
+			elseif c == '[' then
+				bc = bc  + 1
+			elseif c == '}' then 
+				cc = cc - 1
+				if cc < 0 then return '\\' end
+			elseif c == ']' then 
+				bc = bc - 1
+			end
+		end
+		prev = c
+	end
+
+	
+
+	if bc < 0 or cc ~= 0 then return "\\" end
+	if m:sub(-1,-1) == '\\' then return '\\' end
+	if m:find("[\\][\n]") then return '\\' end -- not sure on this one
+	if not complex and not hasSpecial then return "" end
+	return "{}"
+end
+
+local function escapeList(list)
+	local mapped = {}
+	for k,v in ipairs(list) do
+		local m = v.string
+		local p = escapePlan(m)
+		--print("EP", p, "=>", m)
+
+		if p == '{}' then
+			m = '{' .. m .. '}'
+		elseif p == '\\' then
+			m = m:gsub("([{}%[%]\"\\\r\v\t\\\n$; ])",function(o)
+				if o == '\n' then return '\\n'
+				elseif o == '\r' then return '\\r'
+				elseif o == '\v' then return '\\v'
+				elseif o == '\t' then return '\\t'
+				elseif o == '\\' then return '\\\\'
+				else return '\\' .. o end
+			end)
+			if k == 1 and m:sub(1,1) == '#' then
+				m = '\\' .. m
+			end
+		else
+			if k == 1 and m:sub(1,1) == '#' then
+				m = '{' .. m .. '}'
+			end
+		end
+		mapped[k] = m
+	end
+	return table.concat(mapped, " ")
+
+end
 
 function Value.fromStringView(str, left, right, kind)
 	assert(type(str) == "string")
@@ -147,19 +216,9 @@ function props.string(self)
 		self.string = s
 		return s
 	elseif self.kind == ValueType_List then
-		local mapped = {}
-		for k,v in ipairs(self.list) do
-			local m = v.string
-			
-			if m:find("[ %$\r\n\t%[]") or #m == 0 then
-				m = "{" .. m:gsub("([{}\\])", "\\%1") .. "}"
-			else
-				m = m:gsub("([{}%[%]\"\\])","\\%1")
-				m = m:gsub("\\{([^}]*)\\}", "{%1}")
-			end
-			mapped[k] = m
-		end
-		return table.concat(mapped, " ")
+		local s = escapeList(self.list)
+		self.string = s
+		return self.string
 	end
 	error("Need a string")
 end
@@ -189,10 +248,27 @@ function props.interp(self)
 			return Value.fromCompoundList(rparts)
 		elseif self.kind == ValueType_Variable then
 			local o = self.string:sub(2)
-			o = o:gsub("(%b{})", function(s) print(o, s:sub(2,-2)) return s:sub(2,-2) end)
+			o = o:gsub("(%b{})", function(s) return s:sub(2,-2) end)
+			local va, vb = o:find("%(.*%)$")
+			if va then
+				local idx = o:sub(va+1, vb-1)
+				local n = o:sub(1, va-1)
+				if not dict[n] then
+					error('cant read "' .. o .. '": no such variable', 0)
+				end
+				if not dict[n].array then
+					error('cant read "' .. o .. '": variable isn\'t an array', 0)
+				end
+				if not dict[n].array[idx] then
+					return Value.none
+				end
+				return dict[n].array[idx]
+			end
 			--print("VAR /" ..  o .. "/", dict[o] and dict[o].value or "?")
-			if not dict[o] then return "?" .. o .. "?" end
-			if not dict[o].value then return "" end
+			if not dict[o] then
+				error('cant read "' .. o .. '": no such variable', 0)
+			end
+			if not dict[o].value then return Value.none end
 			return dict[o].value
 		end
 		local s = self.string
@@ -218,6 +294,34 @@ function props.interp(self)
 	end
 end
 
+function props.scanner(self)
+	if rawget(self, 'string_view') then
+		return function(self)
+			local sv =  self.string_view
+			assert(sv[3]>=sv[2])
+			local ss = sv[1]:sub(sv[2],sv[3])
+			if(#ss ~= 1 + sv[3] - sv[2]) then
+				print(sv[1],sv[2],sv[3])
+				os.exit(1)
+			end
+			return setmetatable({
+				source = sv[1],
+				left = sv[2],
+				pos = sv[2],
+				right = sv[3]
+			}, {__index=Scanner})
+		end
+	end
+	return function(self)
+		return setmetatable({
+			source = self.string,
+			left = 1,
+			pos = 1,
+			right = #self.string
+		}, {__index=Scanner})
+	end
+end
+
 Value.metaTable = {
 	__index = function(self, name)
 		if props[name] then return props[name](self) end
@@ -229,43 +333,21 @@ Value.metaTable = {
 			self.number = n
 			return n
 		elseif name == 'list' then
-			local list = self.cmdlist[1]
+			local list = {}
+			for k,v in ipairs(self.cmdlist) do
+				for kk,vv in ipairs(v.list) do
+					table.insert(list, vv)
+				end
+			end
 			if not list then return {} end
-			self.list = list.list
-			return list.list
+			self.list = list
+			return list
 		elseif name == 'sub' then
 			local s = self.string
 			return function(self, ...)
 				--Todo: Support string_view
 				return Value.fromString(string.sub(s,...))
 			end
-		elseif name == 'scanner' then
-			if rawget(self, 'string_view') then
-				return function(self)
-					local sv =  self.string_view
-					assert(sv[3]>=sv[2])
-					local ss = sv[1]:sub(sv[2],sv[3])
-					if(#ss ~= 1 + sv[3] - sv[2]) then
-						print(sv[1],sv[2],sv[3])
-						os.exit(1)
-					end
-					return setmetatable({
-						source = sv[1],
-						left = sv[2],
-						pos = sv[2],
-						right = sv[3]
-					}, {__index=Scanner})
-				end
-			end
-			return function(self)
-				return setmetatable({
-					source = self.string,
-					left = 1,
-					pos = 1,
-					right = #self.string
-				}, {__index=Scanner})
-			end
-
 		elseif name == 'type' then
 			local kind = self.kind
 			if kind == ValueType_String then return "String"

@@ -29,14 +29,26 @@ local function x(v, state)
 end
 
 local function ucl_set(interp, key, value)
-	if not interp.variables[key.string] then
-		interp.variables[key.string] = {name=key, value=value}
+	local k = key.string
+	local va, vb = k:find("%(.*%)$")
+	if va then
+		local idx = k:sub(va+1, vb-1)
+		local n = k:sub(1, va-1)
+		if not interp.variables[n] then
+			interp.variables[n] = {name=Value.fromString(k), array={}}
+		end
+		if value then interp.variables[n].array[idx] = value end
+		return interp.variables[n].array[idx]
+	end
+
+	if not interp.variables[k] then
+		interp.variables[k] = {name=key, value=value}
 		return value
 	elseif value then
-		interp.variables[key.string].value = value
+		interp.variables[k].value = value
 		return value
 	else
-		return interp.variables[key.string].value
+		return interp.variables[k].value
 	end
 end
 
@@ -123,10 +135,17 @@ local function newstate(engine)
 	state.eval = function(s, code) return ucl_eval(code, s) end
 	state.expr = function(s, code) return ucl_expr(code, s) end
 	state.child = function(self)
+		local cmds
+		if next(self.commands) ~= nil then
+			cmds = setmetatable({}, {__index = self.commands})
+		else
+			cmds = setmetatable({}, getmetatable(self.commands))
+		end
+
 		local c = {
 			globals = self.globals,
 			level = self.level + 1,
-			commands = setmetatable({}, {__index = self.commands}),
+			commands = cmds,
 			engine = self.engine,
 			variables = setmetatable({}, {__index = self.globals}),
 			child = self.child,

@@ -55,13 +55,13 @@ end
 
 local function runtest(test)
 	local shouldFail = false
-	if test.filter and test.filter.string == "skip" then
+	if test.constraints and test.constraints.string == "skip" then
 		if showall then cprint('white', "SKIP", name, desc) end
 		skip = skip + 1
 		return
 	end
 
-	if test.filter and test.filter.string:match("longIs") then
+	if test.constraints and test.constraints.string:match("longIs") then
 		if showall then cprint('white', "SKIP", name, desc) end
 		skip = skip + 1
 		return
@@ -69,13 +69,23 @@ local function runtest(test)
 
 --
 
-	if test.filter and (test.filter.string:match("fails")) then
+	if test.constraints and (test.constraints.string:match("fails")) then
 		skip = skip + 1
 		shouldFail = true
 	end
 
-	local ok, result = pcall(test.interp.eval, test.interp, test.code.string)
-	
+	local ok, result = pcall(test.interp.eval, test.interp, test.body)
+
+
+	if test.returnCodes then
+		if not ok then
+			ok = true
+			result = ucl.Value.fromString(result)
+		else
+			ok = false
+			result = ucl.Value.fromString("expected throw but no throw")
+		end
+	end
 
 	if ok and not result then
 		if shouldFail and not showall then return end
@@ -83,7 +93,7 @@ local function runtest(test)
 		cprint('red', "    " .. fail .. ") " .. test.line)
 		fails[fail] = {name = test.line, error="No result"}
 		if bail then os.exit(1) end
-	elseif result.string == test.expected.string then
+	elseif result.string == test.result.string then
 		if shouldFail then 
 			cwrite('yellow', "    ? ")
 			print(test.line)
@@ -97,30 +107,28 @@ local function runtest(test)
 		if shouldFail and not showall then return end
 		fail = fail + 1	
 		cprint('red', "    " .. fail .. ") " .. test.line)
-		fails[fail] = {name = test.line, error=result}
+		fails[fail] = {name = test.line, error=result.string or result}
 		if bail then os.exit(1) end
 	else
 		if shouldFail and not showall then return end
 		fail = fail + 1
 		cprint('red',"    " .. fail .. ") " .. test.line)
-		fails[fail] = {name = test.line, error = "got " .. encode(result.string) .. " expected " .. encode(test.expected.string)}
+		fails[fail] = {name = test.line, error = "got " .. encode(result.string) .. " expected " .. encode(test.result.string)}
 		if bail then os.exit(1) end
 	end
 end
 
 local test = function(interp, ...)
-	local opts = argparse('test name ?desc? ?constraints? body result ?-match? ?-returnCodes?')(...)
+	local opts = argparse('test name ?desc? ?constraints? body result ?match? ?returnCodes?')(...)
 
 	local line = opts.name.string .. ' ' .. (opts.desc or ucl.Value.none).string:gsub("\n", " ")
 	if match ~= nil and not string.find(line, match, 1, true) then
 		return
 	end
+	opts.interp = interp
+	opts.line = line
 
-	runtest({
-		name=opts.name, desc=opts.desc, filter=opts.constraints,
-		code=opts.body, expected=opts.result,
-		interp=interp, line=line
-	})
+	runtest(opts)
 end
 
 local i = ucl.new()
@@ -128,7 +136,7 @@ i.commands.test = test
 i.commands.bytestring = function(interp, v) return v end
 
 for k,v in ipairs({
-	'source', 'file', 'info', 'needs', 'testCmdConstraints',
+	'source', 'file', 'needs', 'testCmdConstraints',
 	'rename', 'lsort', 'testreport'
 }) do
 	i.commands[v] =function(interp, f) return ucl.Value.none end

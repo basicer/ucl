@@ -1,4 +1,5 @@
 local Value = require('ucl/value')
+local argparse = require('ucl/argparse')
 
 local ReturnCode_Ok = 0
 local ReturnCode_Error = 1
@@ -17,6 +18,81 @@ local function join(...)
 	local str = table.concat(lst, " ")
 	return Value.fromString(str)
 end
+
+local arrays = {
+	exists = function(interp, key)
+		local var = interp.variables[key.string]
+
+		if var and var.array then
+			return Value.True
+		else
+			return Value.False
+		end
+	end,
+	get = function(interp, key)
+		local var = interp.variables[key.string]
+		if not var then
+			var = {name=key, array={}}
+			interp.variables[key.string] = var
+		end
+		if not var.array then
+			error("variable isnt an array")
+		end
+		local result = {}
+		for k,v in pairs(var.array) do
+			table.insert(result, Value.fromString(k))
+			table.insert(result, v)
+		end
+		return Value.fromList(result)
+	end,
+	names = function(interp, key)
+		local var = interp.variables[key.string]
+		if not var then
+			var = {name=key, array={}}
+			interp.variables[key.string] = var
+		end
+		if not var or not var.array then
+			error("variable isnt an array")
+		end
+
+		local names = {}
+		for k,v in pairs(var.array) do table.insert(names, Value.fromString(k)) end
+		return Value.fromList(names)
+	end,
+	set = function(interp, key, list)
+		local args = list.list
+		if #args%2 ~= 0 then
+			error('list must have an even number of elements', 0)
+		end
+
+		local var = interp.variables[key.string]
+		if not var then
+			var = {name=key, array={}}
+			interp.variables[key.string] = var
+		end
+		if not var.array then
+			error("variable isnt an array", 0)
+		end
+
+		for i=1,#args,2 do
+			var.array[args[i].string] = args[i+1]
+		end
+		return Value.none
+	end,
+	size = function(interp, key)
+		local var = interp.variables[key.string]
+		if not var then
+			var = {name=key, array={}}
+			interp.variables[key.string] = var
+		end
+		if not var or not var.array then
+			error("variable isnt an array")
+		end
+		local n = 0
+		for k,v in pairs(var.array) do n = n + 1 end
+		return Value.fromNumber(n)
+	end,
+}
 
 local strings = {
 	index = function(interp, str, idx)
@@ -56,8 +132,12 @@ local strings = {
 }
 
 local infos = {
-	level = function(interp, level) return Value.fromNumber(interp.level) end,
-	commands = function(interp) 
+	level = function(interp, ...)
+		local args = argparse("info level ?levelNum?")(Value.fromString('level'), ...)
+		return Value.fromNumber(interp.level)
+	end,
+	commands = function(interp, ...)
+		local args = argparse("info commands ?pattern?")(Value.fromString('commands'), ...)
 		local result = {}
 		local t = interp.commands
 		while t do
@@ -69,7 +149,8 @@ local infos = {
 		end
 		return Value.fromList(result)
 	end,
-	exists = function(interp, name) 
+	exists = function(interp, name, ...)
+		local args = argparse("info exists varName")(Value.fromString('commands'), name, ...)
 		return interp.variables[name.string] and Value.True or Value.False
 	end,
 	vars = function(interp) 
@@ -85,10 +166,49 @@ local infos = {
 	end,
 	patchlevel = function(intep)
 		return Value.fromNumber(7)
-	end
+	end,
+	body = function(interp, ...)
+		local args = argparse("info body procname")(Value.fromString('body'), ...)
+		local c = interp.commands[args.procname.string]
+		if type(c) == "table" then
+			return c.body
+		else
+			error('command "' .. args.procname.string .. '" is not a procedure', 0)			
+		end
+	end,
+	args = function(interp, ...)
+		local args = argparse("info args procname")(Value.fromString('args'), ...)
+		local c = interp.commands[args.procname.string]
+		if type(c) == "table" then
+			return c.args
+		else
+			error('command "' .. args.procname.string .. '" is not a procedure', 0)			
+		end
+	end,
+	globals = function(interp)
+		local lst = {}
+		for k,v in pairs(interp.globals) do
+			table.insert(lst, v.name)
+		end
+		return Value.fromList(lst)
+	end,
 }
 
-local builtin = {}
+local command_mt = {
+	__call = function(self, ...) return self.fx(...) end
+}
+
+local builtin = setmetatable({}, {
+	__newindex = function(self, k, v)
+		if type(v) == 'function' then
+			rawset(self, k, setmetatable({
+				fx = v
+			}, command_mt))
+		else
+			rawset(self, k, v)
+		end
+	end
+})
 
 function builtin.puts(interp, ...)
 	print(...)
@@ -115,6 +235,12 @@ builtin['/'] = reducer(function(a, b) return a / b end)
 builtin['%'] = reducer(function(a, b) return a % b end)
 
 builtin['==']  = function(interp, a, b) return Value.fromBoolean(a == b) end
+
+function builtin.array(interp, command, ...)
+	local cmd = command.string
+	if not arrays[cmd] then error("unknown array command: " .. cmd, 0) end
+	return arrays[cmd](interp, ...)
+end
 
 function builtin.catch(interp, code, var)
 	local ok, ret, retCode = pcall(interp.eval, interp, code)
@@ -223,26 +349,37 @@ end
 
 function builtin.foreach(interp, var, list, body)
 
-	if not interp.variables[var.string] then
-		interp.set(var, Value.none)
-	end
+
+
 	
-	local target = interp.variables[var.string]
 
 	local llist = list.list
+	local vlist = var.list
+	for k,v in ipairs(vlist) do
+		if not interp.variables[v.string] then
+			interp.set(v, Value.none)
+		end
+	end
+	local target = interp.variables[vlist[1].string]
 	local ret, retCode
 
-	for k,v in ipairs(llist) do
+	for k=1,#llist do
+		local v = llist[k]
+		local tidx = (k - 1) % #vlist + 1
+		local target = interp.variables[vlist[tidx].string]
 		target.value = v
-		ret, retCode = interp:eval(body)
 
-		if retCode == ReturnCode_Break then
-			break;
-		elseif retCode == ReturnCode_Continue then
-		elseif retCode == ReturnCode_Ok then
-		elseif retCode == nil then
-		else
-			return ret, retCode
+		if tidx == #vlist then
+			ret, retCode = interp:eval(body)
+
+			if retCode == ReturnCode_Break then
+				break;
+			elseif retCode == ReturnCode_Continue then
+			elseif retCode == ReturnCode_Ok then
+			elseif retCode == nil then
+			else
+				return ret, retCode
+			end
 		end
 	end
 end
@@ -388,12 +525,11 @@ function builtin.list(interp, ...)
 	return Value.fromList({...})
 end
 
-
-function builtin.proc(interp, name, args, body)
-	interp.commands[name.string] = function(interp, ...)
+local proc_mt = {
+	__call = function(self, interp, ...)
 		local state = interp:child()
 
-		for k,v in ipairs(args.list) do
+		for k,v in ipairs(self.args.list) do
 			if v.string == "args" then
 				local rest = Value.fromList({select(k, ...)})
 				state.set(v, rest)
@@ -401,9 +537,16 @@ function builtin.proc(interp, name, args, body)
 				state.set(v, select(k, ...))
 			end
 		end
-		local final, retCode = state:eval(body)
+		local final, retCode = state:eval(self.body)
 		return final, ReturnCode_Ok
 	end
+}
+
+function builtin.proc(interp, name, args, body)
+	interp.commands[name.string] = setmetatable({
+		args = args,
+		body = body
+	}, proc_mt)
 	return name
 end
 
@@ -422,25 +565,7 @@ function builtin.set(interp, key, value, ...)
 	return interp.set(key, value)
 end
 
-function builtin.lset(interp,name,idx,value)
-	if not interp.variables[name.string] then
-		error('unknown variable ' .. name.string, 0)
-	end
-	local var = interp.variables[name.string]
-	local iidx = idx.number + 1
-	local result = {}
-	for k,v in ipairs(var.value.list) do
-		if k == iidx then
-			result[k] = value
-		else
-			result[k] = v
-		end
-	end
 
-	var.value = Value.fromList(result)
-	--print(#result, var.value.type, #var.value.list, var.value.string)
-	return var.value
-end
 
 
 function builtin.unset(interp, key) 
@@ -464,14 +589,56 @@ function builtin.range(interp, from, to, step)
 	return Value.fromList(lst)
 end
 
-function builtin.lindex(interp, list, idx)
-	if not idx then return list end
-	local r = list.list[idx.number + 1]
-	if not r then return Value.none end
-	return r
+
+local function lidx(n, list)
+	local s = n.string
+	local a = s:match("^end([%+%-]-%--%d*)$")
+	if a then
+		if a == '' then
+			return #list
+		else
+			return #list + tonumber(a)
+		end
+	end
+	return n.number + 1
 end
+
+function builtin.lset(interp,name,idx,value)
+	if not interp.variables[name.string] then
+		error('unknown variable ' .. name.string, 0)
+	end
+	local var = interp.variables[name.string]
+	local iidx = lidx(idx, var.value.list)
+	--local iidx = idx.number + 1
+	local result = {}
+	if iidx < 1 then error('list index out of range', 0) end
+	if iidx > #var.value.list then error('list index out of range', 0) end
+
+	for k,v in ipairs(var.value.list) do
+		if k == iidx then
+			result[k] = value
+		else
+			result[k] = v
+		end
+	end
+
+	var.value = Value.fromList(result)
+	--print(#result, var.value.type, #var.value.list, var.value.string)
+	return var.value
+end
+
+function builtin.lindex(interp, ...)
+	local args = builtin.lindex.argparse(...)
+	if not args.index then return args.list end
+	local n = lidx(args.index, args.list.list)
+	local v = args.list.list[n]
+	if not v then return Value.none end
+	return v
+end
+builtin.lindex.argparse = argparse("lindex list ?index?")
+
 function builtin.linsert(interp, list, idx, ...)
-	local ii = idx.number
+	local ii = lidx(idx, list.list)
 	local lst = {unpack(list.list)}
 	for k,v in ipairs({...}) do
 		table.insert(lst, ii + k, v)
@@ -539,6 +706,12 @@ function builtin.lappend(interp, var, ...)
 	local lst = {unpack(v.list)}
 	for k,v in ipairs({...}) do table.insert(lst, v) end
 	return interp.set(var, Value.fromList(lst))
+end
+
+function builtin.lsort(interp, list)
+	local tosort = {unpack(list.list)}
+	table.sort(tosort, function(a,b) return a.string < b.string end)
+	return Value.fromList(tosort)
 end
 
 builtin['break'] = function(interp) return Value.none, ReturnCode_Break end

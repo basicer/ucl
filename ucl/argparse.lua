@@ -50,8 +50,12 @@ local function argparse(template)
 				repeat
 					ak = ak + 1
 					pos = alist[ak]
-					if not pos then return result end
+					if not pos then break end
 				until not pos.optional or nOptional > 0
+
+				if not pos then
+					error('wrong # args: should be "' .. template .. '"', 0)
+				end
 
 				if pos.optional then
 					nOptional = nOptional - 1
@@ -62,39 +66,10 @@ local function argparse(template)
 			end
 			k = k + 1
 		end
-
 		return result
 	end
 end
 
-local function test(tpl, str)
-	print(str)
-	local f = argparse(tpl)
-	local ucl = require('ucl')
-	local cl = ucl.Value.fromString(str)
-	local o = f(unpack(cl.list))
-	for k,v in pairs(o) do
-		print("->", k, v)
-	end
-	print()
-end
 
-test('test name desc ?flags? body', 'a b c')
-test('test name desc ?flags? body', '-body b -name n -retCode 2')
-
-test('test name ?desc? ?-match? ?-returnCodes? ?constraints? body result', [[expr-old-38.1 {Verify Tcl_ExprString's basic operation} -constraints {fails testexprstring} -body {
-    list [testexprstring "1+4"] [testexprstring "2*3+4.2"] \
-	    [catch {testexprstring "1+"} msg] $msg
-} -match glob -result {5 10.2 1 *}
-test expr-old-38.2 {Tcl_ExprString} {fails} testexprstring {
-    # This one is "magical"
-    testexprstring {} {fails}
-} 0
-test expr-old-38.3 {Tcl_ExprString} {fails} -constraints testexprstring -body {
-    testexprstring { } {fails}
-} -returnCodes error -match glob -result *
-]])
-
---test('regexp ?-nocase? ?-line? ?-indices? ?-start offset? ?-all? ?-inline? ?--? exp string ?matchVar? ?subMatchVar...?', 'e s')
 
 return argparse
