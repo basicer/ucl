@@ -1,5 +1,5 @@
-local Value = require('ucl/value')
-local argparse = require('ucl/argparse')
+local Value = require('ucl.value')
+local argparse = require('ucl.argparse')
 
 local ReturnCode_Ok = 0
 local ReturnCode_Error = 1
@@ -11,7 +11,7 @@ local unpack = table.unpack or _G.unpack
 
 local function join(...)
 	local lst = {}
-	for k,v in ipairs({...}) do
+	for _,v in ipairs({...}) do
 		local s = v.string:gsub("^%s+", ""):gsub("%s+$", "")
 		if #s > 0 then table.insert(lst, s) end
 	end
@@ -56,7 +56,7 @@ local arrays = {
 		end
 
 		local names = {}
-		for k,v in pairs(var.array) do table.insert(names, Value.fromString(k)) end
+		for k,_ in pairs(var.array) do table.insert(names, Value.fromString(k)) end
 		return Value.fromList(names)
 	end,
 	set = function(interp, key, list)
@@ -89,7 +89,7 @@ local arrays = {
 			error("variable isnt an array")
 		end
 		local n = 0
-		for k,v in pairs(var.array) do n = n + 1 end
+		for _,_ in pairs(var.array) do n = n + 1 end
 		return Value.fromNumber(n)
 	end,
 }
@@ -153,7 +153,7 @@ local infos = {
 		local args = argparse("info exists varName")(Value.fromString('commands'), name, ...)
 		return interp.variables[name.string] and Value.True or Value.False
 	end,
-	vars = function(interp) 
+	vars = function(interp)
 		local result = {}
 		local t = interp.variables
 		for k,v in pairs(t) do
@@ -173,7 +173,7 @@ local infos = {
 		if type(c) == "table" then
 			return c.body
 		else
-			error('command "' .. args.procname.string .. '" is not a procedure', 0)			
+			error('command "' .. args.procname.string .. '" is not a procedure', 0)
 		end
 	end,
 	args = function(interp, ...)
@@ -182,7 +182,7 @@ local infos = {
 		if type(c) == "table" then
 			return c.args
 		else
-			error('command "' .. args.procname.string .. '" is not a procedure', 0)			
+			error('command "' .. args.procname.string .. '" is not a procedure', 0)
 		end
 	end,
 	globals = function(interp)
@@ -295,7 +295,7 @@ function builtin.eval(interp, ...)
 		local s = table.concat(args," ")
 		v = Value.fromString(s) --Todo Make CompoundString
 	end
-	
+
 	return interp:eval(v)
 end
 
@@ -309,7 +309,7 @@ function builtin.uplevel(interp, level, ...)
 	local v
 	local target = interp
 	local ups = 1
-	
+
 	if tonumber(level.string) ~= nil then
 		for i=1,level.number do
 			target = target.up
@@ -332,7 +332,7 @@ function builtin.uplevel(interp, level, ...)
 		local args = {unpack(va)}
 		v = Value.fromList(args)
 	end
-	
+
 	return target:eval(v)
 end
 
@@ -350,9 +350,6 @@ end
 function builtin.foreach(interp, var, list, body)
 
 
-
-	
-
 	local llist = list.list
 	local vlist = var.list
 	for k,v in ipairs(vlist) do
@@ -360,7 +357,6 @@ function builtin.foreach(interp, var, list, body)
 			interp.set(v, Value.none)
 		end
 	end
-	local target = interp.variables[vlist[1].string]
 	local ret, retCode
 
 	for k=1,#llist do
@@ -399,11 +395,11 @@ function builtin.format(interp, format, ...)
 
 
 		if d == '$' then
-			idx = tonumber(i) 
+			idx = tonumber(i)
 			if kind == 1 then error('cannot mix "%" and "%n$" conversion specifiers', 0) end
 			if idx > #s or idx < 1 then error('"%n$" argument index out of range', 0) end
 			kind = 2
-		else 
+		else
 			if kind == 2 then error('cannot mix "%" and "%n$" conversion specifiers', 0) end
 			kind = 1
 		end
@@ -414,8 +410,8 @@ function builtin.format(interp, format, ...)
 		if p == "*" then
 			p = s[idx].string
 			idx = idx + 1
-			if idx > #s or idx < 1 then 
-				if kind == 2 then 
+			if idx > #s or idx < 1 then
+				if kind == 2 then
 					error('"%n$" argument index out of range', 0)
 				else
 					error('not enough arguments for all format specifiers', 0)
@@ -428,8 +424,8 @@ function builtin.format(interp, format, ...)
 
 		if t == 'b' then
 			t = 's'
-			v = string.format('%o', v):gsub('.', function(m) 
-				return ({'000','001','010','011','100','101','110','111'})[m + 1] 
+			v = string.format('%o', v):gsub('.', function(m)
+				return ({'000','001','010','011','100','101','110','111'})[m + 1]
 			end)
 		end
 
@@ -443,7 +439,7 @@ end
 function builtin.global(interp, ...)
 	for _, key in ipairs({...}) do
 		if not interp.globals[key.string] then
-			interp.globals[key.string] = {name=key, value=Value.fromString("")}
+			interp.globals[key.string] = {name=key, value=Value.none}
 		end
 		interp.variables[key.string] = interp.globals[key.string]
 	end
@@ -530,12 +526,14 @@ local proc_mt = {
 		local state = interp:child()
 
 		for k,v in ipairs(self.args.list) do
+			local vv
 			if v.string == "args" then
 				local rest = Value.fromList({select(k, ...)})
-				state.set(v, rest)
+				vv = rest
 			else
-				state.set(v, select(k, ...))
+				vv = select(k, ...)
 			end
+			rawset(state.variables, v.string, {name = v, value = vv})
 		end
 		local final, retCode = state:eval(self.body)
 		return final, ReturnCode_Ok
@@ -561,14 +559,14 @@ function builtin.set(interp, key, value, ...)
 	if not key or select('#', ...) > 0 then
 		error('wrong # args: should be "set varName ?newValue?"', 0)
 	end
-	
+
 	return interp.set(key, value)
 end
 
 
 
 
-function builtin.unset(interp, key) 
+function builtin.unset(interp, key)
 	interp.variables[key.string] = nil
 end
 
@@ -704,7 +702,7 @@ function builtin.lappend(interp, var, ...)
 	local v = interp.set(var)
 	if not v then v = interp.set(var, Value.none) end
 	local lst = {unpack(v.list)}
-	for k,v in ipairs({...}) do table.insert(lst, v) end
+	for _,av in ipairs({...}) do table.insert(lst, av) end
 	return interp.set(var, Value.fromList(lst))
 end
 
@@ -717,7 +715,7 @@ end
 builtin['break'] = function(interp) return Value.none, ReturnCode_Break end
 builtin['continue'] = function(interp) return Value.none, ReturnCode_Continue end
 
-builtin['#'] = function(inter, value) end
+builtin['#'] = function(interp) return Value.none end
 
 return builtin
 

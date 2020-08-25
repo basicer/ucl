@@ -30,7 +30,7 @@ end
 
 local function escapePlan(m)
 	if #m == 0 then return '{}' end
-	
+
 	local hasSpecial = nil ~= m:find("[ %[%]$\";%\\\r\n\f\z\v\t]")
 	local hasBrace = nil ~= m:find("[{}]")
 
@@ -49,17 +49,16 @@ local function escapePlan(m)
 				cc = cc + 1
 			elseif c == '[' then
 				bc = bc  + 1
-			elseif c == '}' then 
+			elseif c == '}' then
 				cc = cc - 1
 				if cc < 0 then return '\\' end
-			elseif c == ']' then 
+			elseif c == ']' then
 				bc = bc - 1
 			end
 		end
 		prev = c
 	end
 
-	
 
 	if bc < 0 or cc ~= 0 then return "\\" end
 	if m:sub(-1,-1) == '\\' then return '\\' end
@@ -125,7 +124,7 @@ function Value.fromString(str, kind)
 end
 
 function Value.fromXString(str)
-	local tokenize = require('ucl/tokenize')
+	local tokenize = require('ucl.tokenize')
 	local list = tokenize.tokenize(str)
 	return list[1]
 end
@@ -191,7 +190,7 @@ end
 local props = {}
 
 function props.cmdlist(self)
-	local tokenize = require('ucl/tokenize')
+	local tokenize = require('ucl.tokenize')
 	local list = tokenize.tokenize(self)
 	self.cmdlist = list
 	return list
@@ -205,7 +204,7 @@ function props.string(self)
 		return "" .. self.number
 	elseif self.kind == ValueType_CompoundString then
 		local parts = {}
-		for k,v in ipairs(self.parts) do
+		for _,v in ipairs(self.parts) do
 			if v.kind == ValueType_CommandList then table.insert(parts,'[') end
 			table.insert(parts, v.string)
 			if v.kind == ValueType_CommandList then table.insert(parts,']') end
@@ -223,10 +222,16 @@ function props.string(self)
 	error("Need a string")
 end
 
+function props.expr_tokens(self)
+	local tokens = require('ucl.tokenize').expr(self.string)
+	self.expr_tokens = tokens
+	return tokens
+end
+
 function props.interp(self)
 	return function(self, state)
 		local dict = state.variables
-		if self.kind == ValueType_RawString then 
+		if self.kind == ValueType_RawString then
 			return self
 		elseif self.kind == ValueType_CommandList then
 			return state:eval(self)
@@ -271,8 +276,9 @@ function props.interp(self)
 			if not dict[o].value then return Value.none end
 			return dict[o].value
 		end
+		local changed
 		local s = self.string
-		local s, changed = unescape(s)
+		s, changed = unescape(s)
 
 		local function replacer(o)
 			changed = true
@@ -326,7 +332,7 @@ Value.metaTable = {
 	__index = function(self, name)
 		if props[name] then return props[name](self) end
 		if name == 'string' then
-			
+
 		elseif name == 'number' then
 			local n = tonumber(self.string)
 			if type(n) ~= "number" then error("invalid number: " .. self.string, 0) end
@@ -334,8 +340,8 @@ Value.metaTable = {
 			return n
 		elseif name == 'list' then
 			local list = {}
-			for k,v in ipairs(self.cmdlist) do
-				for kk,vv in ipairs(v.list) do
+			for _,v in ipairs(self.cmdlist) do
+				for _,vv in ipairs(v.list) do
 					table.insert(list, vv)
 				end
 			end
@@ -359,7 +365,7 @@ Value.metaTable = {
 			elseif kind == ValueType_Variable then return "Variable"
 			end
 		elseif name == 'execute' then
-			local compile, x = require('ucl/compile')
+			local compile = require('ucl.compile')
 			local str = compile(self)
 			local v, err = loadstring(str)
 			if v == nil then error(err) end

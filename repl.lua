@@ -6,7 +6,7 @@ local readline = function()
 end
 
 local i = ucl.new()
-
+i.flags.jit = 0
 
 local haveffi, ffi = pcall(require,'ffi')
 
@@ -26,7 +26,7 @@ if haveffi then
 
 
 	if ok then
-		readline = function() 
+		readline = function()
 			local cstr = C.readline("ucl> " );
 			if nil == cstr then return nil end
 			local s = ffi.string(cstr);
@@ -37,7 +37,7 @@ if haveffi then
 	end
 end
 
-if arg[1] then 
+if arg[1] then
 	i:eval(io.open(arg[1], 'r'):read("*a"))
 	os.exit()
 end
@@ -45,7 +45,7 @@ end
 repeat
 	local line = readline()
 	if line ~= nil then
-		local re, rres = pcall(function()
+		local _, rres = pcall(function()
 			return i:eval(line)
 		end)
 		if rres ~= nil then print(rres) end

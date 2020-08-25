@@ -489,7 +489,7 @@ test format-14.2 {testing MAX_FLOAT_SIZE for 0 and 1} {
     format {%s} "a"
 } {a}
 
-test format-15.1 {testing %0..s 0 padding for chars/strings} {
+test format-15.1 {testing %0..s 0 padding for chars/strings} {fails} {
     format %05s a
 } {0000a}
 test format-15.2 {testing %0..s 0 padding for chars/strings} {
@@ -498,7 +498,7 @@ test format-15.2 {testing %0..s 0 padding for chars/strings} {
 test format-15.3 {testing %0..s 0 padding for chars/strings} {
     format %5s a
 } {    a}
-test format-15.4 {testing %0..s 0 padding for chars/strings} {
+test format-15.4 {testing %0..s 0 padding for chars/strings} {fails} {
     format %05c 61
 } {0000=}
 test format-15.5 {testing %d space padding for integers} {

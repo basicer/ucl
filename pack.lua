@@ -3,14 +3,14 @@ local out = io.open(arg[1] or "out.lua", "w")
 out:write([[
 
 --
---                                
+--                                    
 --                _|_|_|    _|        
 --  _|    _|    _|          _|        
 --  _|    _|    _|          _|        
 --  _|    _|    _|          _|        
 --    _|_|_|      _|_|_|    _|_|_|_|  
 --        _|                     
---        _|_|  Micro Command Language                     
+--        _|_|  Micro Command Language
 --
 --
 
@@ -21,6 +21,8 @@ local files = {}
 
 iofill.read = io.read
 iofill.write = io.write
+iofill.stdout = io.stdout
+iofill.stderr = io.stderr
 iofill.glob = function(where, pattern)
 	local results = {}
 	for k,v in pairs(files) do
@@ -74,7 +76,7 @@ end
 for filename in glob('tests') do
 	local h = io.open(filename, 'r')
 	out:write('files["' .. filename .. '"] = [==[')
-	out:write(h:read("*all")) 
+	out:write(h:read("*all"))
 	out:write(' ]==]\n')
 	h:close()
 end
@@ -85,9 +87,9 @@ include("test.lua")
 include("repl.lua")
 
 out:write([[
-
+	-- Try to detect if we are being executed by lua repl
 	if getfenv and arg and not pcall(getfenv, 4) then
-		if arg[1] == "test" then
+		if arg[1] == "--test" then
 			table.remove(arg, 1)
 			req('test')
 		else
@@ -95,4 +97,5 @@ out:write([[
 		end
 	end
 	return req('ucl')
-	]])
+
+]])

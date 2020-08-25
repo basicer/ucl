@@ -1,10 +1,10 @@
 
 setmetatable(_G, {
-	__newindex = function(g, name) error("No such global:" .. name) end,
-	index = function(g, name) error("No such global:" .. name) end,
+	__newindex = function(_, name) error("No such global:" .. name) end,
+	index = function(_, name) error("No such global:" .. name) end,
 })
 
-local Value = require('ucl/value')
+local Value = require('ucl.value')
 local Engine = {}
 
 local unpack = _G.unpack or table.unpack
@@ -17,7 +17,7 @@ local ReturnCode_Continue = 4
 
 local globals = {}
 
-local builtins = require('ucl/builtins')
+local builtins = require('ucl.builtins')
 
 
 local function x(v, state)
@@ -72,7 +72,7 @@ local function ucl_eval(code, state)
 		local mapped = {}
 
 		local c = x(lst[1], state)
-		if c.string:sub(1,1) ~= "#" then 
+		if c.string:sub(1,1) ~= "#" then
 
 			local cmd = state.commands[c.string]
 			if not cmd and state.commands.unknown then
@@ -101,11 +101,11 @@ local function ucl_eval(code, state)
 			for i=2,#lst do
 				mapped[i-1] = x(lst[i], state)
 			end
-			
+
 			--local s = lst[1].string
 			--for k,v in pairs(mapped) do s = s .. ',' .. v.string end
 			--print("TRACE", s, unpack(mapped))
-			
+
 			out, retCode = cmd(state, unpack(mapped))
 			retCode = retCode or ReturnCode_Ok
 
@@ -117,12 +117,12 @@ local function ucl_eval(code, state)
 	return out, ReturnCode_Ok
 end
 
-local expr = require('ucl/expr')
+local expr = require('ucl.expr')
 local ucl_expr = function(code, state)
 	return Value.from(expr.expr(code, state))
 end
 
-local function newstate(engine) 
+local function newstate(engine)
 	local state = {
 		commands = engine.commands,
 		engine = engine,

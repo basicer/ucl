@@ -1,5 +1,5 @@
 local LuaWriter_mt = {}
-
+local INDENT = "    "
 local function LuaWriter()
     return setmetatable({
         indent = "",
@@ -48,7 +48,7 @@ function LuaWriter_mt:fx(...)
     self:write(")")
     self:write("\n")
     local i = self.indent
-    self.indent = self.indent .. "    "
+    self.indent = self.indent .. INDENT
     self:write(self.indent)
     args[#args](self)
     self.indent = i
@@ -58,7 +58,7 @@ end
 function LuaWriter_mt:doend(fx)
     self:line("do")
     local i = self.indent
-    self.indent = self.indent .. "    "
+    self.indent = self.indent .. INDENT
     fx(self)
     self.indent = i
     self:line("end")
@@ -69,10 +69,6 @@ function LuaWriter_mt:string(s)
     self:write("([==[")
     self:write(s)
     self:write("]==])")
-end
-
-local function cp(w, v)
-    w:line("-- " .. v.string)
 end
 
 local function wv(w, v)
@@ -153,7 +149,7 @@ cmd = function(w, v, origin)
     w:line("if not cmd and interp.commands.unknown then")
     w:line("    cmd = function(self, ...) return interp.commands.unknown(self, " .. args[1].v .. ", ...) end")
     w:line("end")
-    w:line("if not cmd then error('No such command: ' .. " .. args[1].s .. ", 0) end")   
+    w:line("if not cmd then error('No such command: ' .. " .. args[1].s .. ", 0) end")
 
     w:write("ret,retCode = cmd(interp")
     for i=2,#args do
@@ -193,9 +189,9 @@ local function compile(s)
         w:write(w2:toString())
     end)
 
-    local s = w:toString()
-    --print(s)
-    return s
+    local result = w:toString()
+    --io.stderr:write(result)
+    return result
 end
 
 
@@ -230,24 +226,26 @@ local function expr(w, whats)
     repeat
         if whats.a.type ~= "RawString" then break end
 
-        local tokens = require('ucl/tokenize').expr(whats.a.string)
+        local tokens = whats.a.expr_tokens
         w:write("--[[ #T:" .. #tokens .. "]] ")
         if #tokens ~=3 then break end
         local op = tokens[2]
 
-        if op == "<" or op == '>' or op == "==" or ope == "!=" then
+        if op == "<" or op == '>' or op == "==" or op == "!=" then
+            if op == "!=" then op = "~=" end
             w:write("(")
             ep(w, tokens[1])
-            w:write(tokens[2])
+            w:write(op)
             ep(w, tokens[3])
             w:write(") and Value.True or Value.False")
-        else
-            if not ops[tokens[2]] then break end
+        elseif ops[op] then
             w:write("Value.fromNumber(")
             ep(w, tokens[1])
-            w:write(ops[tokens[2]])
+            w:write(ops[op])
             ep(w, tokens[3])
             w:write(")")
+        else
+            break
         end
 
         return
@@ -258,19 +256,31 @@ local function expr(w, whats)
 end
 
 special['if'] = function(w, v, origin)
-    if #v.list ~= 3 then return false end
+
+    if #v.list ~= 3 and not (#v.list == 5 and v.list[4].string == "else") then
+        return false
+    end
+
     local args = fargs(w, v, origin)
     w:line("-- if " .. args[2].s)
-    
+
     w:write("ret = ")
     expr(w, args[2])
     w:line()
 
     w:line("if ret.number ~= 0 then")
     local i = w.indent
-    w.indent = w.indent .. "    "
-    for k,v in pairs(v.list[3].cmdlist) do
-        cmd(w,v, origin .. '.list[3].cmdlist[' .. k .. ']')
+    w.indent = w.indent .. INDENT
+    for k,vv in pairs(v.list[3].cmdlist) do
+        cmd(w,vv, origin .. '.list[3].cmdlist[' .. k .. ']')
+    end
+    if #v.list == 5 then
+        w.indent = i
+        w:line("else")
+        w.indent = w.indent .. INDENT
+        for k,v in pairs(v.list[5].cmdlist) do
+            cmd(w,v, origin .. '.list[5].cmdlist[' .. k .. ']')
+        end
     end
     w.indent = i
     w:line("end")

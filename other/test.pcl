@@ -43,6 +43,7 @@ proc test {name cmd arrow expected} {
         incr ::r
     } else {
         puts ">>>>> $name PASS"
+        incr ::g
     }
 }
 
@@ -1477,4 +1478,4 @@ if {$test_config(picol) && $test_config(io)} {
     }
 }
 
-puts "[info script] [info patchlevel]: ---------------- tested $n, failed $r"
+puts "[info script] [info patchlevel]: ---------------- tested $n, failed $r, passed $g"

@@ -6,10 +6,10 @@ local function argparse(template)
 	local i = -1
 	for m in template:gmatch("[^%s]+") do
 		i = i + 1
-		if i > 0 then 
+		if i > 0 then
 			if m:match("^%?.*%?$") then
 				local t = {name=m:sub(2,-2), optional=true}
-				if ( t.name:sub(1,1) == "-" ) then 
+				if ( t.name:sub(1,1) == "-" ) then
 					t.name = t.name:sub(2)
 				else
 					table.insert(alist, t)
@@ -37,7 +37,7 @@ local function argparse(template)
 		while k <= #ar do
 			local v = ar[k]
 			local pos
-			while true do
+			repeat
 				if v.string:sub(1,1) == '-' then
 					local name = v.string:sub(2)
 					if atab[name] then
@@ -62,8 +62,7 @@ local function argparse(template)
 				end
 
 				result[pos.name] = v
-				break
-			end
+			until true
 			k = k + 1
 		end
 		return result

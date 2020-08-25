@@ -1,5 +1,5 @@
 local ucl = require 'ucl'
-local argparse = require 'ucl/argparse'
+local argparse = require 'ucl.argparse'
 
 local pass = 0
 local fail = 0
@@ -12,6 +12,7 @@ local dir = 'tests'
 local fmatch = '.'
 local bail = false
 local showall = false
+local jit = 0
 
 local q = 1
 while arg[q] do
@@ -19,7 +20,8 @@ while arg[q] do
 	elseif arg[q] == '-b' then bail = true q = q + 1
 	elseif arg[q] == '-g' then match = arg[q+1] q = q + 2 
 	elseif arg[q] == '-d' then dir = arg[q+1] q = q + 2 
-	elseif arg[q] == '-f' then fmatch = arg[q+1] q = q + 2 
+	elseif arg[q] == '-f' then fmatch = arg[q+1] q = q + 2
+	elseif arg[q] == '-j' then jit = 1 q = q + 1
 	else error("Unknown flag: " .. arg[q]) end
 end
 
@@ -56,13 +58,13 @@ end
 local function runtest(test)
 	local shouldFail = false
 	if test.constraints and test.constraints.string == "skip" then
-		if showall then cprint('white', "SKIP", name, desc) end
+		if showall then cprint('white', "SKIP", test.line) end
 		skip = skip + 1
 		return
 	end
 
 	if test.constraints and test.constraints.string:match("longIs") then
-		if showall then cprint('white', "SKIP", name, desc) end
+		if showall then cprint('white', "SKIP", test.line) end
 		skip = skip + 1
 		return
 	end
@@ -94,7 +96,7 @@ local function runtest(test)
 		fails[fail] = {name = test.line, error="No result"}
 		if bail then os.exit(1) end
 	elseif result.string == test.result.string then
-		if shouldFail then 
+		if shouldFail then
 			cwrite('yellow', "    ? ")
 			print(test.line)
 			badfails = badfails + 1
@@ -105,7 +107,7 @@ local function runtest(test)
 		pass = pass + 1
 	elseif not ok then
 		if shouldFail and not showall then return end
-		fail = fail + 1	
+		fail = fail + 1
 		cprint('red', "    " .. fail .. ") " .. test.line)
 		fails[fail] = {name = test.line, error=result.string or result}
 		if bail then os.exit(1) end
@@ -132,6 +134,7 @@ local test = function(interp, ...)
 end
 
 local i = ucl.new()
+i.flags.jit = jit
 i.commands.test = test
 i.commands.bytestring = function(interp, v) return v end
 
@@ -166,10 +169,10 @@ for k,filename in ipairs(testFiles) do
     local code = h:read('*a')
     h:close()
     local ok, err = xpcall(function()
-    	return i:eval(code)
+		return i:eval(code)
     end, debug.traceback)
     if not ok then
-    	cprint('red', err)
+		cprint('red', err)
     end
 end
 
