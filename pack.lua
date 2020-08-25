@@ -1,5 +1,9 @@
 local out = io.open(arg[1] or "out.lua", "w")
 
+if arg[-1] then
+	out:write("#!/usr/bin/env " .. arg[-1])
+end
+
 out:write([[
 
 --
