@@ -22,7 +22,7 @@ function Scanner:peek()
 	return self.source:sub(self.pos, self.pos), self.pos
 end
 function Scanner:done()
-	return self.pos > self.right + 2
+	return self.pos > self.right + 1
 end
 function Scanner:reverse()
 	self.pos = self.pos - 1
@@ -145,6 +145,13 @@ function Value.fromList(slist)
 	return setmetatable({
 		kind = ValueType_List,
 		list = slist
+	}, Value.metaTable)
+end
+
+function Value.fromCmdList(slist)
+	return setmetatable({
+		kind = ValueType_CommandList,
+		cmdlist = slist
 	}, Value.metaTable)
 end
 

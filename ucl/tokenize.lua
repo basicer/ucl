@@ -33,7 +33,7 @@ function tokenizer_mt:readBracedString(s)
 	local left = s.pos
 	local n = 1
 	repeat
-		local c = s:advance()
+		local c = s:peek()
 		if c == "\\" then
 			s:advance()
 		elseif c == '{' then
@@ -42,7 +42,12 @@ function tokenizer_mt:readBracedString(s)
 			n = n - 1
 			if n == 0 then break end
 		end
+		s:advance()
 	until s:done()
+
+	if s:advance() ~= '}' then
+		self:error('missing close-brace')
+	end
 
 	if s.pos - 2 >= left then
 		return Value.fromStringView(s.source, left, s.pos - 2, ValueType_RawString)
@@ -80,15 +85,16 @@ end
 function tokenizer_mt:readBrackedString(s)
 	assert(s:advance() == '[')
 	local left = s.pos
-	self:readTCL(s)
+	local parts = self:readTCL(s)
 	if s:advance() ~= ']' then
-		error('missing close-bracket', 0)
+		self:error('missing close-bracket')
 	end
-	return Value.fromStringView(s.source, left, s.pos - 2, ValueType_CommandList)
+	local r = Value.fromStringView(s.source, left, s.pos - 2, ValueType_CommandList)
+	rawset(r, "cmdlist", parts)
+	return r
 end
 
 function tokenizer_mt:readQuotedString(s)
-
 	assert(s:advance() == '"')
 	local left = s.pos
 	local c
@@ -105,7 +111,8 @@ function tokenizer_mt:readQuotedString(s)
 			table.insert(parts, self:readBrackedString(s))
 			left = s.pos - 1
 		elseif s:done() then
-			error("unterminated quote", 0)
+			self:error("unterminated quote")
+			break
 		else
 			s:advance()
 		end
@@ -207,7 +214,9 @@ function tokenizer_mt:readToken(s)
 		r = self:readBrackedString(s)
 	elseif c == '"' then
 		r = self:readQuotedString(s)
-		if not isSpecial(s:peek()) then error('extra characters after close-quote', 0) end
+		if not isSpecial(s:peek()) then
+			self:error('extra characters after close-quote')
+		end
 	else
 		r = self:readBareWord(s)
 	end
@@ -220,7 +229,8 @@ function tokenizer_mt:readTCL(s)
 	while not s:done() do
 		while s:peek() ~= '\n' and isSpace(s:peek()) and not s:done() do s:advance() end
 		if s:peek() == ']' then break end
-		if s:peek() == '\n' or s:peek() == ';' or s:peek() == 'EOF' then
+		if s:peek() == 'EOF' then break end
+		if s:peek() == '\n' or s:peek() == ';' then
 			s:advance()
 			if #line > 0 then table.insert(lines, Value.fromList(line)) end
 			line = {}
@@ -231,6 +241,7 @@ function tokenizer_mt:readTCL(s)
 			end
 		end
 	end
+	if #line > 0 then table.insert(lines, Value.fromList(line)) end
 	return lines
 end
 
@@ -281,13 +292,45 @@ function tokenizer_mt:expr(code)
 	return tokens
 end
 
-local function tok(inp)
+function tokenizer_mt:error(str)
+	table.insert(self.errors, str)
+end
+
+local function new()
+	local t = setmetatable({
+		s = s,
+		progress = {},
+		errors = {}
+	}, {__index=tokenizer_mt})
+	return t
+end
+
+local function load(inp)
 	if type(inp) ~= "table" then inp = Value.fromString(inp) end
 
 	local s = inp:scanner()
-	local t = setmetatable({s = s}, {__index=tokenizer_mt})
+	local t = new()
 	local lines = t:readTCL(s)
+	return t, lines
+end
 
+local function value(inp)
+	local t,lines = load(inp)
+	local r
+	if #inp > 0 then
+		r = Value.fromStringView(inp, 1, #inp, ValueType_CommandList)
+	else
+		r = Value.fromString("", ValueType_CommandList)
+	end
+	rawset(r, "cmdlist", parts)
+	return t, r
+end
+
+local function tok(inp)
+	local t, lines = load(inp)
+	if #t.errors > 0 then
+		error(t.errors[1], 0)
+	end
 	if false then
 		print("Parsed " .. #lines .. " lines")
 		for k,v in ipairs(lines) do
@@ -306,4 +349,4 @@ local function expr(s)
 	return t:expr(s)
 end
 
-return {tokenize = tok, expr = expr}
+return {tokenize = tok, expr = expr, new=new, load=load, value=value}

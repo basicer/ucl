@@ -163,7 +163,10 @@ end
 function Engine:eval(code, state)
 	state = state or newstate(self)
 	return state:eval(code)
+end
 
+function Engine:interactive()
+	return require('ucl.interactive').new(self)
 end
 
 function Engine.new()
