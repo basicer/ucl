@@ -16,19 +16,19 @@ local jit = 0
 
 local q = 1
 while arg[q] do
-	if arg[q] == '-a' then showall = true q = q + 1
-	elseif arg[q] == '-b' then bail = true q = q + 1
-	elseif arg[q] == '-g' then match = arg[q+1] q = q + 2 
-	elseif arg[q] == '-d' then dir = arg[q+1] q = q + 2 
-	elseif arg[q] == '-f' then fmatch = arg[q+1] q = q + 2
-	elseif arg[q] == '-j' then jit = 1 q = q + 1
+	if arg[q] == '-a' then showall = true ;q = q + 1
+	elseif arg[q] == '-b' then bail = true; q = q + 1
+	elseif arg[q] == '-g' then match = arg[q+1]; q = q + 2
+	elseif arg[q] == '-d' then dir = arg[q+1]; q = q + 2
+	elseif arg[q] == '-f' then fmatch = arg[q+1]; q = q + 2
+	elseif arg[q] == '-j' then jit = 1; q = q + 1
 	else error("Unknown flag: " .. arg[q]) end
 end
 
 local colors = {
 	default = 0, reset = 0,
 	-- foreground colors
-	black = 30, red = 31, green = 32, yellow = 33, 
+	black = 30, red = 31, green = 32, yellow = 33,
 	blue = 34, magenta = 35, cyan = 36, white = 37
 }
 
@@ -44,8 +44,8 @@ local function cwrite(n, ...)
 	io.write("\027[" .. colors.reset .. 'm')
 end
 
-local function encode(s) 
-	return s:gsub("([\r\n\t\\])", function(o) 
+local function encode(s)
+	return s:gsub("([\r\n\t\\])", function(o)
 		if o == '\n' then return '\\n' end
 		if o == '\r' then return '\\r' end
 		if o == '\v' then return '\\v' end
@@ -137,6 +137,32 @@ local i = ucl.new()
 i.flags.jit = jit
 i.commands.test = test
 i.commands.bytestring = function(interp, v) return v end
+i.commands.tokenize = function(interp, s)
+	return ucl.Value.fromList(require("ucl.tokenize").tokenize(s))
+end
+i.commands.typeof = function(interp, v)
+	return ucl.Value.fromString(v.type)
+end
+i.commands.lua = function(interp, code)
+	local fx = loadstring(code.string)
+	local variables_proxy = setmetatable({}, {
+		__index = function(self, k)
+			local l =  interp.variables[k]
+			print("index ", k, interp.variables[k])
+			for k,v in pairs(l) do
+				print("\t", k, v)
+			end
+			return interp.variables[k].value
+		end
+	})
+	setfenv(fx, {
+		variables=variables_proxy,
+		print=print,
+		tokenize=require('ucl.tokenize').load,
+		assert=assert
+	})
+	return ucl.Value.from(fx())
+end
 
 for k,v in ipairs({
 	'source', 'file', 'needs', 'testCmdConstraints',
@@ -145,7 +171,7 @@ for k,v in ipairs({
 	i.commands[v] =function(interp, f) return ucl.Value.none end
 end
 
-if not io.glob then 
+if not io.glob then
 	io.glob = function(dir, match)
 		local result = {}
 		local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format(dir), 'r'))
