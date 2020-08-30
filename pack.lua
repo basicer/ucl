@@ -58,7 +58,7 @@ local function include(filename)
 	local h = assert(io.open(filename, 'r'))
 	print(filename)
 	local code = h:read('*a')
-	local moduleName = filename:gsub(".lua$", ""):gsub("/init", ""):gsub("/",".")
+	local moduleName = filename:gsub(".lua$", ""):gsub("[\\/]","."):gsub("%.init", "")
 	loadstring(code) -- Make sure it compiles
 	out:write("packages['" .. moduleName .. "'] = (function(require, io) ")
 	out:write(code)
@@ -67,10 +67,24 @@ local function include(filename)
 end
 
 local function glob(dir)
-	local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format(dir), 'r'))
-	local list = pfile:read('*a')
-	pfile:close()
-	return list:gmatch('[^%z]+')
+	local pfile
+	if jit and jit.os == "Windows" then
+		local cdc = assert(io.popen("echo %cd%", "r"))
+		local cd = cdc:read("*a"):gsub("%s+$", "")
+		cdc:close()
+
+		local pfile = assert(io.popen(("dir /B /s %s"):format(dir), 'r'))
+		local list = pfile:read('*a')
+		cd = cd:gsub("([%%-+])", function(c) return "%" .. c end)
+		list = list:gsub(cd .. "\\", "")
+		pfile:close()
+		return list:gmatch('([^\r\n]+)')
+	else
+		local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format(dir), 'r'))
+		local list = pfile:read('*a')
+		pfile:close()
+		return list:gmatch('[^%z]+')
+	end
 end
 
 for filename in glob('ucl') do
@@ -79,7 +93,8 @@ end
 
 for filename in glob('tests') do
 	local h = io.open(filename, 'r')
-	out:write('files["' .. filename .. '"] = [==[')
+	local name = filename:gsub("\\", "/")
+	out:write('files["' .. name .. '"] = [==[')
 	out:write(h:read("*all"))
 	out:write(' ]==]\n')
 	h:close()
