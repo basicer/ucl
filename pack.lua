@@ -40,12 +40,12 @@ iofill.open = function(name) return {
 		assert(w == "*a")
 		return files[name]
 	end,
-	close = function(seld) end
+	close = function(self) end
 } end
 
 local function req(file)
 	if not loaded[file] then
-		if not packages[file] then error("Unknown package " .. file) end
+		if not packages[file] then return require(file) end
 		loaded[file] = packages[file](req, iofill)
 	end
 	return loaded[file]
@@ -55,6 +55,7 @@ end
 
 
 local function include(filename)
+	local loadstring = _G.loadstring or _G.load
 	local h = assert(io.open(filename, 'r'))
 	print(filename)
 	local code = h:read('*a')
@@ -80,7 +81,7 @@ local function glob(dir)
 		pfile:close()
 		return list:gmatch('([^\r\n]+)')
 	else
-		local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format(dir), 'r'))
+		local pfile = assert(io.popen(("find '%s' -maxdepth 2 -type f -print0"):format(dir), 'r'))
 		local list = pfile:read('*a')
 		pfile:close()
 		return list:gmatch('[^%z]+')

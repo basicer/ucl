@@ -7,7 +7,8 @@ setmetatable(_G, {
 local Value = require('ucl.value')
 local Engine = {}
 
-local unpack = _G.unpack or table.unpack
+local env = require('ucl.env')
+local unpack = env.unpack
 
 local ReturnCode_Ok = 0
 local ReturnCode_Error = 1
@@ -17,7 +18,7 @@ local ReturnCode_Continue = 4
 
 local globals = {}
 
-local builtins = require('ucl.builtins')
+local builtins = require('ucl.builtins.all')
 
 
 local function x(v, state)
@@ -62,7 +63,7 @@ local function ucl_eval(code, state)
 			code = Value.none
 		end
 	end
-	if state.flags.jit > 0 then
+	if state.flags.jit > 0 and env.loadstring then
 		local n = rawget(code, "cnt") or 1
 		rawset(code, "cnt", n + 1)
 		if n >= state.flags.jit then return code.execute(state) end

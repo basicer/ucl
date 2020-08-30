@@ -1,4 +1,5 @@
 local ucl = require 'ucl'
+local env = require 'ucl.env'
 local argparse = require 'ucl.argparse'
 
 local pass = 0
@@ -25,23 +26,12 @@ while arg[q] do
 	else error("Unknown flag: " .. arg[q]) end
 end
 
-local colors = {
-	default = 0, reset = 0,
-	-- foreground colors
-	black = 30, red = 31, green = 32, yellow = 33,
-	blue = 34, magenta = 35, cyan = 36, white = 37
-}
-
 local function cprint(n, ...)
-	io.write("\027[" .. colors[n] .. 'm')
-	print(...)
-	io.write("\027[" .. colors.reset .. 'm')
+	print(env.colorize("{" .. n .. "-fg}%s{/}", table.concat({...}, "\t")))
 end
 
 local function cwrite(n, ...)
-	io.write("\027[" .. colors[n] .. 'm')
-	io.write(...)
-	io.write("\027[" .. colors.reset .. 'm')
+	io.write(env.colorize("{" .. n .. "-fg}%s{/}", table.concat({...}, "\t")))
 end
 
 local function encode(s)
@@ -144,7 +134,7 @@ i.commands.typeof = function(interp, v)
 	return ucl.Value.fromString(v.type)
 end
 i.commands.lua = function(interp, code)
-	local fx = loadstring(code.string)
+	local fx = env.loadstring(code.string)
 	local variables_proxy = setmetatable({}, {
 		__index = function(self, k)
 			local l =  interp.variables[k]
@@ -155,7 +145,7 @@ i.commands.lua = function(interp, code)
 			return interp.variables[k].value
 		end
 	})
-	setfenv(fx, {
+	env.setfenv(fx, {
 		variables=variables_proxy,
 		print=print,
 		tokenize=require('ucl.tokenize').load,

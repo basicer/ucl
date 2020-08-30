@@ -315,14 +315,15 @@ local function load(inp)
 end
 
 local function value(inp)
-	local t,lines = load(inp)
+	
 	local r
 	if #inp > 0 then
 		r = Value.fromStringView(inp, 1, #inp, ValueType_CommandList)
 	else
 		r = Value.fromString("", ValueType_CommandList)
 	end
-	rawset(r, "cmdlist", parts)
+	local t,lines = load(r)
+	rawset(r, "cmdlist", lines)
 	return t, r
 end
 

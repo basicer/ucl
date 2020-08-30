@@ -1,3 +1,5 @@
+local env = require('ucl.env')
+
 local Value = {}
 
 local ValueType_None   = 0
@@ -374,7 +376,7 @@ Value.metaTable = {
 		elseif name == 'execute' then
 			local compile = require('ucl.compile')
 			local str = compile(self)
-			local v, err = loadstring(str)
+			local v, err = env.loadstring(str)
 			if v == nil then error(err) end
 			local fn = v()(self, Value)
 			self.execute = fn

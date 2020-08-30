@@ -1,7 +1,8 @@
+local env = require('ucl.env')
 local Value = require 'ucl.value'
 
-local bit = _G.bit or _G.bit32 or require('bit32')
-local unpack = table.unpack or _G.unpack
+local bit = env.bit
+local unpack = env.unpack
 
 
 local ops = {
@@ -168,5 +169,5 @@ end
 
 
 return {
-	expr = expr
+	expr = expr,
 }
