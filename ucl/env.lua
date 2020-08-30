@@ -3,16 +3,19 @@ local bit = _G.bit or _G.bit32 or false
 
 local tty = true
 local version = _VERSION
+local os = "Unknown"
 
 local haveffi, ffi = pcall(require, "ffi")
 if haveffi then
+	os = ffi.os
 	version = version:gsub("Lua", "Lua (jit)")
 	ffi.cdef [[
 		 int isatty(int fd);
 	]]
-	tty = 1 == ffi.C.isatty(1)
+	pcall(function()
+		tty = 1 == ffi.C.isatty(1)
+	end)
 end
-
 
 local havejit, jit = pcall(require, "jit")
 if havejit then
@@ -87,13 +90,17 @@ local function colorize(fmt, ...)
 
 			['/'] =  "\027[0m"
 		}
-		if tty then
+		if tty and os ~= "Windows" then
 			return codes[k]
 		elseif codes[k] then
 			return ''
 		end
 	end):format(...)
-	return text .. "\027[0m"
+	if tty and os ~= "Windows" then
+		return text .. "\027[0m"
+	else
+		return text
+	end
 end
 
 return {
@@ -103,5 +110,6 @@ return {
 	setfenv = setfenv,
 	lua = version,
 	colorize = colorize,
-	tty = tty
+	tty = tty,
+	os = os
 }

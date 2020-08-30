@@ -89,7 +89,9 @@ local function glob(dir)
 end
 
 for filename in glob('ucl') do
-	include(filename)
+	if filename ~= "ucl\\builtins" then
+		include(filename)
+	end
 end
 
 for filename in glob('tests') do

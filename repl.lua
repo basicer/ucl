@@ -140,7 +140,8 @@ local banner = {
 	load = env.loadstring and "+" or "-",
 	bits = env.bit and "+" or "-",
 	lua = env.lua,
-	rltype = rltype
+	rltype = rltype,
+	os = env.os
 }
 
 if env.tty then
