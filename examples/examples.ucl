@@ -1,0 +1,141 @@
+Basic commands
+
+help <format> { 
+        to format your strings
+        you use the format command
+        it works like sprintf
+}
+help <list> {
+        this simple command  
+        create lists of arguments
+        lindex reverses
+}
+help <expr> {
+        let's evaluate
+        the arguments given here
+        as an expression
+}
+help <foreach> {
+        time to iterate
+        a loop foreach element 
+        that is in the list(s)
+}
+help <uplevel> {
+        allows for your script
+        to run in a higher scope
+        push it uplevel
+}
+help <catch> {
+        catch errors with catch
+        so bad returns don't abort
+        your program early
+}
+help <join> {
+        join converts your lists
+        joining list elements
+        into a new string
+}
+help <info> {
+        take a guess won't you?
+        what might info do for you?
+        ucl info?
+}
+help <set> {
+        you'll need to use set
+        to set up variables
+        this is how it works
+
+help <+> {
+
+}
+help <incr> {
+        increments values
+        stored in your variables
+        with this simple trick!        
+}
+help <array> {
+}
+help <lindex> {
+
+}
+help <-> {
+}
+help <puts> { 
+        puts your chosen string
+        into a chosen channel
+        try `puts 'Hello World'` 
+}
+help <proc> {
+        so complicated
+        this one confuses Maka
+        You should just ask Rob 
+}
+help <lset> {
+    lset varName ?index ...? newValue
+        change an element 
+        in a list with this command
+        replace a value
+}
+help <string> { 
+        use this string command
+        for string manipulation
+        with other commands
+}
+help <continue> { 
+        you use continue
+        if you want to skip ahead
+        an interation
+}
+help <error> {
+}
+help </> {
+}
+help <if> {
+}
+help <return> { 
+}
+help <break> {
+}
+help <lsort> {
+}
+help <range> {
+}
+help <global> {
+}
+help <lassign> {
+}
+help <for> {
+        use for to make loops
+        that repeat until complete
+        unless infinite
+} 
+    append> {
+        append some value(s)
+        to a variables end
+}
+help <==> {
+}
+help <while> {
+}
+help <unset> {
+}
+help <#> {
+}
+help <llength> {
+}
+help <rename> {
+}
+help <eval> {
+}
+help <concat> {
+}
+help <switch> {
+}
+help <*> {
+}
+help <lappend> {
+}
+help <linsert> {
+}
+help <%> {
+}
