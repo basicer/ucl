@@ -64,9 +64,9 @@ into a chosen channel
 try `puts 'Hello World'` 
 }
 help {proc} {
-so complicated
-this one confuses Maka
-You should just ask Rob 
+create new commands
+by using the proc command
+make new procedures 
 }
 help {lset} {
 change an element 
