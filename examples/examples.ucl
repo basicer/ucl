@@ -154,13 +154,27 @@ a command or delete one
 ars oldName newName 
 }
 help {eval} {
-
+the first argument
+given to eval is run
+by eval command
 }
 help {concat} {
+concat can join lists
+turn arguments into lists
+with concat command
 }
 help {switch} {
+switches let you match
+patterns to strings in order
+conditionally
 }
 help {lappend} {
+lappend witl append
+one or more args to the end
+of your list, my friend
 }
 help {linsert} {
+got an element?
+insert it into a list
+with linsert command
 }
