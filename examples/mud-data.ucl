@@ -1,0 +1,575 @@
+
+room "The Square" {
+	description "
+		The great square of New London sits in the center of the city, surrounded by streets that extend into the city.
+		To the east, the statue of Lightbringer stands nearly 200 feet tall, casting a shadow that moves over the city during the day. 
+		Harbor Road leads north, towards the warehouse district and docks. 
+		The Path of Wisdom leads west, traveling past the courthouse towards Temple Row.
+		You can hear the murmur coming from Market Street to the south, where many vendors sell all sorts of gear.
+	"
+	exit north { goto "Harbor Road" }
+	exit west { goto "Path of Wisdom" }
+	exit east { goto "Statue of Lightbringer" }
+	exit south { goto "First and Market" }
+	look statue { tell "The statue stands to the east, looking over the square and staring down at something just west of the square." }
+	look warehousedistrict { tell "You can see traces of the river between the large warehouses that stand just north of the square." }
+}
+
+
+room "Harbor Road" {
+	description "
+		It's a road -- heads to the harbor.
+		 	"
+	exit north { goto "Warehouse District" }
+	exit east { goto "East Harbor Road" }
+	exit west { goto "West Harbor Road" }
+	exit south { goto "The Square" }
+}
+
+
+room "Path of Wisdom" {
+	description "
+		The Path of Wisdom connects the main square on the east with New London's municipal and religious centers to south. The road curves gently to form a half circle facing the square and the statue of Lightbringer.
+		 
+	"
+	exit east { goto "The Square" }
+	exit south { goto "High Market" }
+	look statue { tell "From here, the statue of Lightbringer appears to be staring down at you. " }
+}
+
+
+room "Statue of Lightbringer" {
+	description "
+		You are standing at the base of the statue of Lightbringer. 
+		The great square of New London sits in the center of the city, surrounded by streets that extend into the city.
+		To the east, the statue of Lightbringer stands nearly 200 feet tall, casting a shadow that moves over the city during the day. 
+		 	"
+	exit west { goto "The Square" }
+	look statue { tell "You are too close to see any detail of the statue itself." }
+	look square { tell "The central square of New London is directly to your west.  During the morning, a good portion of the square sits in the shade provided by the statue." }
+	look base { tell "The base of the statue has detailed life-sized carvings of warriors engaged in a giant battle. The battle extends around the entire base of the statue, with more than 120 figures carved into it." }
+	look figures { tell "Most figures are archers or gladius and shield bearing warriors, with some few seeming to summon giant stone missiles or jets of fire." }
+}
+
+
+room "First and Market" {
+	description "
+		The intersection between Market Street and First Avenue is a bustling busy marketplace. Dozens of rows and stands sell everything from fresh farm food to hand made items such as tools, weapons, and jewelry.
+		The smells of different foods mixes into a fragrance that is intoxicating to some, and stomach churning to others.
+		This market never closes and during the day it can be difficult to make progress through the intersection. 
+		The eastern end of the intersection ends in a gated park, which separates the market from the middle class suburbs of Middletown.
+		 
+	"
+	exit north { goto "The Square" }
+	exit south { goto "Second and Market" }
+	look statue { tell "The statue stands a bit to the northeast, overlooking the square." }
+	look square { tell "The central square of New London is directly to the north." }
+	look park { tell "Thick shrubbery stands on the other side of the gates, making it hard to see through to the park itself." }
+	look market { tell "Everywhere you look is another stand offereing something just a little different from any other stand." }
+}
+
+
+room "Second and Market" {
+	exit north { goto "First and Market" }
+	exit south { goto "Third and Market" }
+	exit east { goto "Middletown 2.1" }
+}
+
+
+room "Third and Market" {
+	exit north { goto "Second and Market" }
+	exit east { goto "Middletown 1.1" }
+}
+
+
+room "Warehouse District" {
+	exit south { goto "Harbor Road" }
+	exit east { goto "East Warehouse District" }
+	exit west { goto "West Warehouse District" }
+	exit north { goto "Docks" }
+}
+
+
+room "East Warehouse District" {
+	exit north { goto "East Docks" }
+	exit south { goto "East Harbor Road" }
+	exit west { goto "Warehouse District" }
+}
+
+
+room "West Warehouse District" {
+	exit north { goto "West Docks" }
+	exit east { goto "Warehouse District" }
+	exit south { goto "West Harbor Road" }
+}
+
+
+room "Docks" {
+	exit east { goto "East Docks" }
+	exit west { goto "West Docks" }
+	exit south { goto "Warehouse District" }
+}
+
+
+room "East Docks" {
+	exit west { goto "Docks" }
+	exit south { goto "East Warehouse District" }
+}
+
+
+room "West Docks" {
+	exit east { goto "Docks" }
+	exit south { goto "West Warehouse District" }
+}
+
+
+room "East Harbor Road" {
+	exit west { goto "Harbor Road" }
+	exit east { goto "Noble's Way 1" }
+}
+
+
+room "West Harbor Road" {
+	exit west { goto "Lowpath4" }
+	exit east { goto "Harbor Road" }
+}
+
+
+room "Noble's Way 1" {
+	exit east { goto "Noble's Way 2" }
+	exit west { goto "East Harbor Road" }
+}
+
+
+room "Lowpath4" {
+	exit west { goto "Lowpath3" }
+	exit east { goto "West Harbor Road" }
+	exit south { goto "LS4.3" }
+}
+
+
+room "Lowpath3" {
+	exit west { goto "Lowpath2" }
+	exit east { goto "Lowpath4" }
+}
+
+
+room "Lowpath2" {
+	exit east { goto "Lowpath3" }
+	exit west { goto "Lowpath1" }
+	exit south { goto "LS2.3" }
+}
+
+
+room "Lowpath1" {
+	exit south { goto "LS1.3" }
+	exit east { goto "Lowpath2" }
+}
+
+
+room "LS1.3" {
+	exit north { goto "Lowpath1" }
+	exit east { goto "LS1.2" }
+	exit south { goto "LS2.3" }
+}
+
+
+room "LS1.2" {
+	exit north { goto "LS1.3" }
+	exit south { goto "LS1.1" }
+	exit east { goto "LS2.2" }
+}
+
+
+room "LS1.1" {
+	exit north { goto "LS1.2" }
+	exit east { goto "LS2.1" }
+}
+
+
+room "LS2.3" {
+	exit west { goto "LS1.3" }
+	exit east { goto "LS3.3" }
+	exit north { goto "Lowpath2" }
+	exit south { goto "LS2.2" }
+}
+
+
+room "LS3.3" {
+	exit west { goto "LS2.3" }
+	exit east { goto "LS4.3" }
+	exit north { goto "Lowpath3" }
+	exit south { goto "LS3.2" }
+}
+
+
+room "LS4.3" {
+	exit north { goto "Lowpath4" }
+	exit south { goto "LS4.2" }
+	exit west { goto "LS3.3" }
+}
+
+
+room "LS2.2" {
+	exit east { goto "LS3.2" }
+	exit north { goto "LS2.3" }
+	exit south { goto "LS2.1" }
+	exit west { goto "LS1.2" }
+}
+
+
+room "LS3.2" {
+	exit east { goto "LS4.2" }
+	exit south { goto "LS3.1" }
+	exit north { goto "LS3.3" }
+	exit west { goto "LS2.2" }
+}
+
+
+room "LS4.2" {
+	exit north { goto "LS4.3" }
+	exit south { goto "LS4.1" }
+	exit west { goto "LS3.2" }
+}
+
+
+room "LS3.1" {
+	exit west { goto "LS2.1" }
+	exit east { goto "LS4.1" }
+	exit north { goto "LS3.2" }
+}
+
+
+room "LS2.1" {
+	exit west { goto "LS1.1" }
+	exit east { goto "LS3.1" }
+	exit north { goto "LS2.2" }
+}
+
+
+room "LS4.1" {
+	exit west { goto "LS3.1" }
+	exit north { goto "LS4.2" }
+}
+
+
+room "High Market" {
+	description "
+		You are in the middle of Path of Wisdom. The path gently curves north east, connecting to the square, and south east, to Temple Row.
+		Directly to the west are the courthouses, a pair of three story tall buildings. In the Hall of Law, advocates and judges work to ensure justice is met swiftly and surely. In the Hall of Clerks, city bureaucrats ensure the government works to keep New London running smoothly, though not swiftly.
+		South of these twin buildings is the newer, larger New London Trading Markets. 
+		 
+	"
+	exit northeast { goto "Path of Wisdom" }
+	exit southeast { goto "Temple Row" }
+	look statue { tell "From here, the statue of Lightbringer appears to be staring down at the courthouses. " }
+	look courthouses { tell "These two buildings stand side by side, turned slightly to face each other. The Hall of Law stands north of its twin. There you will find the advocates and judges of New London. If you need to seek justice, this is where you will need to go. The Hall of Clerks stands south of its twin. During the day, this building sees a lot of visitors.  It is here you must come if you wish to purchase a license for doing business in New London, starting a guild, buying a home, and more. Plan to take the whole day -- the clerks do not believe velocity is a priority." }
+	look temple { tell "The Path of Wisdom curves to the southeast, leading to the Petitioner's Platform, which stands before the two larger temples. On holidays, Temple Row overflows with visitors, spilling out into High Market." }
+}
+
+
+room "Temple Row" {
+	description "
+		Temple Row is the religious center of New London. Rituals are performed her by each of the major religions recognized and worshipped by New London's citizens. 
+		Though named Temple Row, the three temples actually surround a large cul de sac, each facing the large stage built there.
+		The stage, called the Petitioner's Platform, stands in the center of the cul de sac. This is where those wishing to ask for favors, blessings, and more, come to speak. It is considered bad form to petition more than one temple at a time, or even within the same week.
+		The largest of the three temples belongs to the Children of the Light. The Children believe that Lightbringer is the creator of New London and that if enough workshippers are brought into the light, Lightbringer will return. 
+		In the morning, the statue of Lightbringer casts a shadow over the entire Path of Wisdom, and the Children have a ritual to greet the sun as it rises over Lightbringer's shadow and casts light on the temple.
+		On the south side of the cul de sac is the Church of the Makers, an incredibly ornate structure, due to the talents of the Maker's followers, Earth-Shapers. 
+		The Church of Twilight's temple has none of the spectacle, either in size or structure, of the either of the other two temples. It is shaped so that the front of the temple is in shadows at all times. The Church of Twilight believes Lightbringer has abandoned the world and that as his light recedes, the world will fall to Twilight.
+		\}
+	"
+	exit southwest { goto "Temple of the Children of the Light" }
+	exit south { goto "Church of the Maker" }
+	exit southeast { goto "Twilight's Shrine" }
+	look statue { tell "From here, the statue of Lightbringer seems to be watching the temple of the Children of the Light" }
+	look children { tell "The T of the CotL blah blah" }
+	look twilight { tell "Ooo, spooky" }
+	look maker { tell "Flying buttresses, crystal abutments, and more ..." }
+	look platform { tell "Plenty of Parishioners Petition People" }
+}
+
+
+room "Temple of the Children of the Light" {
+	description "
+		The temple of the Children of the Light is a wide, flat, two-storied building with great round windows to let in the light.  
+		If you stand here for more than 15 minutes, one of the Children will tell you that you too, must let the light in.  It is their favorite joke.
+		The entrance to Temple Row and the Petitioner's Platform stand to the northeast. 
+		The Church of the Maker sits southeast, along the path.
+		The statue of Lightbringer can be seen on the far side of the square.
+		\}
+		 
+		 	"
+	exit northeast { goto "Temple Row" }
+	exit southeast { goto "Church of the Maker" }
+	look statue { tell "From here, the statue of Lightbringer seems to be watching the temple of the Children of the Light" }
+	look children { tell "The T of the CotL blah blah" }
+	look twilight { tell "Ooo, spooky" }
+	look maker { tell "Flying buttresses, crystal abutments, and more ..." }
+	look platform { tell "Plenty of Parishioners Petition People" }
+}
+
+
+room "Church of the Maker" {
+	description "
+		The Temple of the Maker is a beautiful ornate building, with incredible detail in every aspect. The church believes that the world was made by a celestial being they call the Maker and that they should emulate the Maker by creating beautiful things.
+		The temple reflects this, with painted murals, stained glass windows, fine stone work, and more. The entire temple is altered over the course of a year, slowly revealing new works of art, and eventually, an entirely new building.
+		On most days, Makers will be working in front of the church, sculpting, painting, or otherwise demonstrating their creative skills.
+		On holidays, the most skilled Makers will collaborate to create a sculpture while citizens watch, later auctioning it for charity. 
+		 
+		 
+		 	"
+	exit northwest { goto "Temple of the Children of the Light" }
+	exit north { goto "Temple Row" }
+	exit northeast { goto "Twilight's Shrine" }
+}
+
+
+room "Twilight's Shrine" {
+	description "
+		The Temple of Twilight is shaped is such a way that the front of the temple is always in shadow. 
+		The Seers of Twilight offers similar services to those of the Children and Makers but also offer to usher you into Twilight, either before or after your passing. 
+		They do not get many visitors.
+		  
+		 
+		 	"
+	exit northwest { goto "Temple Row" }
+	exit southwest { goto "Church of the Maker" }
+	look shrine { tell "SpoOoky" }
+}
+
+
+room "Noble's Way 2" {
+	exit east { goto "Noble's Way 3" }
+	exit west { goto "Noble's Way 1" }
+}
+
+
+room "Noble's Way 3" {
+	exit west { goto "Noble's Way 2" }
+	exit east { goto "Nob's Hill" }
+}
+
+
+room "Nob's Hill" {
+	exit north { goto "Nob1.1" }
+	exit south { goto "Queen's Way" }
+	exit west { goto "Noble's Way 3" }
+}
+
+
+room "Middletown 3.1" {
+	exit north { goto "Middletown 3.2" }
+	exit south { goto "Middletown 2.1" }
+}
+
+
+room "Middletown 3.2" {
+	exit north { goto "Middletown 3.3" }
+	exit south { goto "Middletown 3.1" }
+	exit west { goto "Middletown 2.2" }
+}
+
+
+room "Middletown 2.1" {
+	exit west { goto "Second and Market" }
+	exit north { goto "Middletown 3.1" }
+	exit south { goto "Middletown 1.1" }
+	exit east { goto "Middletown 2.2" }
+}
+
+
+room "Middletown 1.1" {
+	exit east { goto "Middletown 1.2" }
+	exit north { goto "Middletown 2.1" }
+	exit west { goto "Third and Market" }
+}
+
+
+room "Middletown 2.2" {
+	exit west { goto "Middletown 1.2" }
+	exit east { goto "Middletown 3.2" }
+	exit north { goto "Middletown 2.3" }
+	exit south { goto "Middletown 2.1" }
+}
+
+
+room "Middletown 1.2" {
+	exit north { goto "Middletown 2.2" }
+	exit east { goto "Middletown 1.3" }
+	exit west { goto "Middletown 1.1" }
+}
+
+
+room "Middletown 3.3" {
+	exit west { goto "Middletown 2.3" }
+	exit south { goto "Middletown 3.2" }
+}
+
+
+room "Middletown 2.3" {
+	exit north { goto "Middletown 2.2" }
+	exit south { goto "Middletown 3.3" }
+	exit west { goto "Middletown 1.3" }
+}
+
+
+room "Middletown 1.3" {
+	exit west { goto "Middletown 1.2" }
+	exit north { goto "Middletown 2.3" }
+}
+
+
+room "Nob1.1" {
+	exit east { goto "Nob1.2" }
+	exit north { goto "Nob2.1" }
+}
+
+
+room "Queen's Way" {
+	exit south { goto "Queen2" }
+	exit north { goto "Nob's Hill" }
+}
+
+
+room "Nob1.2" {
+	exit east { goto "Nob2.2" }
+	exit south { goto "Nob1.1" }
+}
+
+
+room "Nob2.1" {
+	exit south { goto "Nob1.1" }
+	exit east { goto "Nob2.2" }
+}
+
+
+room "Nob2.2" {
+	exit west { goto "Nob2.1" }
+	exit south { goto "Nob1.2" }
+}
+
+
+room "Queen2" {
+	exit north { goto "Queen's Way" }
+	exit south { goto "Queen3" }
+}
+
+
+room "Queen3" {
+	exit south { goto "Hightown Gate" }
+	exit north { goto "Queen2" }
+}
+
+
+room "Hightown Gate" {
+	exit north { goto "Queen3" }
+	exit south { goto "Queen4" }
+}
+
+
+room "Queen4" {
+	exit north { goto "Hightown Gate" }
+	exit west { goto "Hightown 2.2" }
+	exit east { goto "Hightown 3.2" }
+	exit south { goto "Queen5" }
+}
+
+
+room "Hightown 2.2" {
+	exit "Hightown 2.1" { goto "Hightown 2.1" }
+	exit "Hightown 1.2" { goto "Hightown 1.2" }
+	exit "Queen4" { goto "Queen4" }
+}
+
+
+room "Hightown 3.2" {
+	exit east { goto "Hightown 4.2" }
+	exit south { goto "Hightown 3.1" }
+	exit west { goto "Queen4" }
+}
+
+
+room "Queen5" {
+	exit north { goto "Queen4" }
+	exit southwest { goto "Queen6" }
+	exit east { goto "Hightown 3.1" }
+	exit west { goto "Hightown 1.2" }
+}
+
+
+room "Hightown 2.1" {
+	exit south { goto "Hightown 1.1" }
+	exit east { goto "Hightown 2.2" }
+}
+
+
+room "Hightown 1.2" {
+	exit west { goto "Hightown 1.1" }
+	exit north { goto "Hightown 2.2" }
+	exit east { goto "Queen5" }
+}
+
+
+room "Hightown 1.1" {
+	exit north { goto "Hightown 2.1" }
+	exit east { goto "Hightown 1.2" }
+}
+
+
+room "Hightown 4.2" {
+	exit west { goto "Hightown 3.2" }
+	exit south { goto "Hightown 4.1" }
+}
+
+
+room "Hightown 3.1" {
+	exit west { goto "Queen5" }
+	exit north { goto "Hightown 3.2" }
+	exit east { goto "Hightown 4.1" }
+}
+
+
+room "Hightown 4.1" {
+	exit north { goto "Hightown 4.2" }
+	exit west { goto "Hightown 3.1" }
+}
+
+
+room "Queen6" {
+	exit northeast { goto "Queen5" }
+	exit southwest { goto "Queen7" }
+}
+
+
+room "Queen7" {
+	exit northeast { goto "Queen6" }
+	exit southwest { goto "Queen8" }
+}
+
+
+room "Queen8" {
+	exit southwest { goto "Queen's Gate" }
+	exit northeast { goto "Queen7" }
+}
+
+
+room "Queen's Gate" {
+	exit northeast { goto "Queen8" }
+	exit southwest { goto "Palace" }
+}
+
+
+room "Palace" {
+	exit west { goto "TBD" }
+	exit northeast { goto "Queen's Gate" }
+}
+
+
+room "TBD" {
+	exit east { goto "Palace" }
+}
+
+
+
+

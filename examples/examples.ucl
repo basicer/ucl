@@ -1,0 +1,180 @@
+help {format} { 
+to format your strings
+you use the format command
+it works like sprintf
+}
+help {list} {
+this simple command  
+create lists of arguments
+lindex reverses
+}
+help {expr} {
+let's evaluate
+the arguments given here
+as an expression
+}
+help {foreach} {
+time to iterate
+a loop foreach element 
+that is in the list(s)
+}
+help {uplevel} {
+allows for your script
+to run in a higher scope
+push it uplevel
+}
+help {catch} {
+catch errors with catch
+so bad returns don't abort
+your program early
+}
+help {join} {
+join converts your lists
+joining list elements
+into a new string
+}
+help {info} {
+take a guess won't you?
+what might info do for you?
+ucl info?
+}
+help {set} {
+you'll need to use set
+to set up variables
+this is how it works
+}
+help {incr} {
+increments values
+stored in your variables
+with this simple trick!
+}
+help {array} {
+time to change arrays
+using array options like
+set get exist names
+}
+help {lindex} {
+Need an element?
+Retrieve it from a list
+by using lindex
+}
+help {puts} { 
+puts your chosen string
+into a chosen channel
+try `puts 'Hello World'` 
+}
+help {proc} {
+so complicated
+this one confuses Maka
+You should just ask Rob 
+}
+help {lset} {
+change an element 
+in a list with this command
+replace a value
+}
+help {string} { 
+use this string command
+for string manipulation
+with other commands
+}
+help {continue} { 
+you use continue
+if you want to skip ahead
+an interation
+}
+help {error} {
+generate errors
+(like most of Maka's code does)
+using this command
+}
+help {if} {
+conditional scripts
+can be executed if 
+you use this command
+}
+help {return} { 
+returns the result
+of your function's function 
+so you can use it 
+}
+help {break} {
+break out of your loop
+by using the break command
+it works like you think ...
+}
+help {lsort} {
+lsort sort your lists
+based on the options you choose
+returns a new list 
+}
+help {range} {
+make lists of numbers
+in the range you've chosen
+through its arguments 
+}
+help {global} {
+use global to get
+access to variables
+with a local var
+}
+help {lassign} {
+assign elements
+to variables from lists
+using this command 
+}
+help {for} {
+use for to make loops
+that repeat until complete
+unless infinite
+} 
+append} {
+append some value(s)
+to a variable's end
+by using append
+}
+help {while} {
+while condition
+is met, keep looping through this
+indefinitely
+}
+help {unset} {
+you can delete vars
+by using unset varname
+kill variables!
+}
+help {llength} {
+llength learn's list length 
+this counts a list's elements
+makes sense, am I right?
+}
+help {rename} {
+rename can rename
+a command or delete one
+ars oldName newName 
+}
+help {eval} {
+the first argument
+given to eval is run
+by eval command
+}
+help {concat} {
+concat can join lists
+turn arguments into lists
+with concat command
+}
+help {switch} {
+switches let you match
+patterns to strings in order
+conditionally
+}
+help {lappend} {
+lappend witl append
+one or more args to the end
+of your list, my friend
+}
+help {linsert} {
+got an element?
+insert it into a list
+with linsert command
+}
