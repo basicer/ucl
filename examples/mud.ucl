@@ -1,0 +1,120 @@
+
+
+proc readfile {name} {
+	lua {
+		local h = io.open(variables.name.string, "r")
+		local contents = h:read("*a")
+		h:close()
+		return contents
+	}
+}
+
+proc room {name code} {
+	lua {
+		local ucl = require('ucl')
+		if not global.rooms then rawset(global, 'rooms', {}) end
+		local room = {
+			name = variables.name.string,
+			visited = false
+		}
+
+		mud = ucl.new()
+		mud.commands = {}
+
+		local function addCollector(name)
+			mud.commands[name] = function(interp, ...)
+				local args = {...}
+				if #args > 1 then
+					local i = args[1].string
+					if not room[name] then room[name] = {} end
+					room[name][i] = args[2].string
+				else
+					room[name] = args[1].string:gsub("\n%s+", "\n")
+				end
+				
+			end
+		end
+
+		addCollector('description')
+		addCollector('look')
+		addCollector('exit')
+		global.rooms[room.name] = room
+
+
+		mud:eval(variables.code)
+	}
+}
+
+eval [readfile "examples/mud-data.ucl"]
+
+set room "The Square"
+
+proc goto {where} {
+	global room
+	set room $where
+}
+
+proc tell {what} {
+	puts $what
+}
+
+
+proc act {roomName} {
+	lua {
+		local r = variables.roomName.string
+		local room = global.rooms[r]
+
+		if not room.visited then
+			room.visited = true
+			print()
+			print(room.name)
+			print((room.description:gsub("\n","\n\n")))
+		end
+
+		local ucl = require('ucl')
+		local i = ucl.new()
+		i.commands = {info=i.commands.info, read=i.commands.read}
+		local interactive = i:interactive()
+
+
+		local upper = interp
+
+		for k,v in pairs(room.exit) do
+			i.commands[k] = function(interp, ...) 
+				upper:eval(v)
+			end
+		end
+		i.commands.eval = function(interp, code)
+			if code then
+				upper:eval(code)
+			end
+		end
+		i.commands.look = function(interp, at)
+			if not at then
+				print((room.description:gsub("\n","\n\n")))
+			else
+				local r = room.look[at.string]
+				if r then
+					upper:eval(r)
+				else
+					print("I dont know how to look at " .. at.string)
+				end
+			end
+		end
+		i.commands.unknown = function(interp, c)
+			print("I dont know how to " .. c.string)
+		end
+
+		--local code = rx:input(room.name .. " % ")
+		--if not code then os.exit(0) end
+		--rx:history_add(code)
+
+		local code = i:eval("read")
+
+		local result, code = i:eval(code)
+		if result then print(result) end
+	}
+}
+
+
+while {1} {act $room}
