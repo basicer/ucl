@@ -1,0 +1,9 @@
+proc fib {x} {
+	if {$x < 3} { return 1 };
+	return [expr [fib [expr {$x - 1} ]] + [fib [expr {$x - 2}]]]
+};
+
+foreach x [range 20] {
+	puts [format "%5d %d" $x [fib $x]]
+}
+

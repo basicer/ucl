@@ -109,7 +109,7 @@ function tokenizer_mt:readQuotedString(s)
 				table.insert(parts, Value.fromStringView(s.source, left, s.pos - 1))
 			end
 			table.insert(parts, self:readBrackedString(s))
-			left = s.pos - 1
+			left = s.pos
 		elseif s:done() then
 			self:error("unterminated quote")
 			break

@@ -3,7 +3,7 @@ local env = require 'ucl.env'
 
 
 local i = ucl.new()
-i.flags.jit = 0
+i.flags.jit = 1
 local interactive = i:interactive()
 
 local banner = {
