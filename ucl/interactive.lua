@@ -3,32 +3,43 @@ local env = require('ucl.env')
 
 local interactive_mt = {}
 
-function interactive_mt:line(s)
-	if not self.buffer then
-		self.buffer = s
-	else
-		self.buffer = self.buffer .. "\n" .. s
+function interactive_mt:sline(s)
+	if s then
+		if not self.buffer then
+			self.buffer = s
+		else
+			self.buffer = self.buffer .. "\n" .. s
+		end
 	end
 
+	if not self.buffer then return false end
 	local u, ast = tokenize.value(self.buffer)
 	if #u.errors == 0 then
 		if self.add_history then
 			self.add_history(self.buffer)
 		end
+		local line = self.buffer
 		self.buffer = false
 
-		local ok, rres = pcall(function()
-			return self.engine:eval(ast)
-		end)
-		if ok then
-			if rres ~= nil then
-				print(rres)
-			end
-		else
-			print(env.colorize('\n{red-fg}%s{/}\n', rres))
-		end
+		
+		return line
 	end
+	return false
+end
 
+function interactive_mt:line(s)
+	local r = self:sline(s)
+	if not r then return false end
+	local ok, rres = pcall(function()
+		return self.engine:eval(ast)
+	end)
+	if ok then
+		if rres ~= nil then
+			print(rres)
+		end
+	else
+		print(env.colorize('\n{red-fg}%s{/}\n', rres))
+	end
 end
 
 function interactive_mt:prompt()
@@ -72,7 +83,7 @@ function interactive_mt:complete(m, n)
 	if m == nil then m = "" end
 
 	local info
-	if buffer then 
+	if buffer then
 		info = self:info(self.buffer .. "\n" .. m)
 	else
 		info = self:info(m)

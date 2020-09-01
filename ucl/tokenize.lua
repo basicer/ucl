@@ -141,8 +141,8 @@ function tokenizer_mt:continueReadingCompositeString(s, left)
 		local c = s:peek()
 		if c == ']' then break end
 		if
-				c == '['
-				or c == '$'
+			c == '['
+			or c == '$'
 		then
 			if left < s.pos then
 				table.insert(result, Value.fromStringView(s.source, left, s.pos - 1))
@@ -306,7 +306,9 @@ local function new()
 end
 
 local function load(inp)
-	if type(inp) ~= "table" then inp = Value.fromString(inp) end
+	if type(inp) ~= "table" then
+		inp = Value.fromString(inp)
+	end
 
 	local s = inp:scanner()
 	local t = new()
@@ -315,7 +317,6 @@ local function load(inp)
 end
 
 local function value(inp)
-	
 	local r
 	if #inp > 0 then
 		r = Value.fromStringView(inp, 1, #inp, ValueType_CommandList)
@@ -350,4 +351,10 @@ local function expr(s)
 	return t:expr(s)
 end
 
-return {tokenize = tok, expr = expr, new=new, load=load, value=value}
+return {
+	tokenize = tok,
+	expr = expr,
+	new=new,
+	load=load,
+	value=value
+}

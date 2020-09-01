@@ -28,6 +28,7 @@ local builtin = setmetatable({}, {
 
 
 require('ucl.builtins.tcl')(builtin)
+require('ucl.builtins.temp')(builtin)
 
 builtin['break'] = function(interp) return Value.none, ReturnCode_Break end
 builtin['continue'] = function(interp) return Value.none, ReturnCode_Continue end

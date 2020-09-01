@@ -133,26 +133,7 @@ end
 i.commands.typeof = function(interp, v)
 	return ucl.Value.fromString(v.type)
 end
-i.commands.lua = function(interp, code)
-	local fx = env.loadstring(code.string)
-	local variables_proxy = setmetatable({}, {
-		__index = function(self, k)
-			local l =  interp.variables[k]
-			print("index ", k, interp.variables[k])
-			for k,v in pairs(l) do
-				print("\t", k, v)
-			end
-			return interp.variables[k].value
-		end
-	})
-	env.setfenv(fx, {
-		variables=variables_proxy,
-		print=print,
-		tokenize=require('ucl.tokenize').load,
-		assert=assert
-	})
-	return ucl.Value.from(fx())
-end
+
 
 for k,v in ipairs({
 	'source', 'file', 'needs', 'testCmdConstraints',
