@@ -1,0 +1,16 @@
+proc unknown {args} {
+	lua {
+		local str = {}
+		local args = variables.args
+		for k,v in pairs(args.list) do
+			table.insert(str, v.string)
+		end
+		local cmd = table.concat(str, " ")
+		os.execute(cmd)
+	}
+}
+
+loop {
+	set msg ""
+	eval [read "uclsh"]
+}

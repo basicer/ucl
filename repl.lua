@@ -16,7 +16,9 @@ local banner = {
 }
 
 if arg[1] then
-	i:eval(io.open(arg[1], 'r'):read("*a"))
+	local h, err = io.open(arg[1], 'r')
+	if not h then error(err, 0) end
+	i:eval(h:read("*a"))
 	os.exit()
 end
 

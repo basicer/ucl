@@ -35,13 +35,16 @@ iofill.glob = function(where, pattern)
 	return results
 end
 
-iofill.open = function(name) return {
-	read = function(self, w) 
-		assert(w == "*a")
-		return files[name]
-	end,
-	close = function(self) end
-} end
+iofill.open = function(name)
+	if not files[name] then return io.open(name) end
+	return {
+		read = function(self, w)
+			assert(w == "*a")
+			return files[name]
+		end,
+		close = function(self) end
+	}
+end
 
 local function req(file)
 	if not loaded[file] then
