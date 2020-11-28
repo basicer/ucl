@@ -5,7 +5,7 @@ test expr-old-1.1 {integer operators} {expr -4} -4
 
 
 test expr-old-1.2 {integer operators} {expr -(1+4)} -5
-test expr-old-1.3 {integer operators} {expr ~3} -4
+test expr-old-1.3 {integer operators} {luav} {expr ~3} -4
 test expr-old-1.4 {integer operators} {expr !2} 0
 test expr-old-1.5 {integer operators} {expr !0} 1
 test expr-old-1.6 {integer operators} {expr 4*6} 24
@@ -16,7 +16,7 @@ test expr-old-1.10 {integer operators} {expr 2+2} 4
 test expr-old-1.11 {integer operators} {expr 2-6} -4
 test expr-old-1.12 {integer operators} {expr 1<<3} 8
 test expr-old-1.13 {integer operators} {expr 0xff>>2} 63
-test expr-old-1.14 {integer operators} {expr -1>>2} -1
+test expr-old-1.14 {integer operators} {luav} {expr -1>>2} -1
 test expr-old-1.15 {integer operators} {expr 3>2} 1
 test expr-old-1.16 {integer operators} {expr 2>2} 0
 test expr-old-1.17 {integer operators} {expr 1>2} 0
@@ -230,9 +230,9 @@ test expr-old-5.17 {illegal string operations} {fails} {
 
 # Check precedence pairwise.
 
-test expr-old-6.1 {precedence checks} {expr -~3} 4
+test expr-old-6.1 {precedence checks} {luav} {expr -~3} 4
 test expr-old-6.2 {precedence checks} {expr -!3} 0
-test expr-old-6.3 {precedence checks} {expr -~0} 1
+test expr-old-6.3 {precedence checks} {luav} {expr -~0} 1
 
 test expr-old-7.1 {precedence checks} {fails} {expr 2*4/6} 1
 test expr-old-7.2 {precedence checks} {expr 24/6*3} 12

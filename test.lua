@@ -59,7 +59,11 @@ local function runtest(test)
 		return
 	end
 
---
+	if test.constraints and test.constraints.string:match("luav") then
+		if showall then cprint('white', "SKIP", test.line) end
+		skip = skip + 1
+		return
+	end
 
 	if test.constraints and (test.constraints.string:match("fails")) then
 		skip = skip + 1
