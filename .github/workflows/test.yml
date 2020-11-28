@@ -28,12 +28,25 @@ jobs:
       - name: Install packages
         run: sudo apt-get install ${{ matrix.lua }}
 
+      - name: Install luarocks
+        run: sudo apt-get install luarocks && sudo luarocks install bit32
+        if: ${{ matrix.lua == 'lua5.1' }}
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      # Runs a set of commands using the runners shell
       - name: Run Tests
         run: |
-          echo Running tests for ${{ matrix.lua }}
+          echo Running tests for ${{ matrix.lua }} `${{ matrix.lua }} -v`
           cd $GITHUB_WORKSPACE
           ${{ matrix.lua }} test.lua
+
+      - name: Package
+        run: ${{ matrix.lua }} pack.lua
+        if: ${{ matrix.lua == 'luajit' }}
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ matrix.lua == 'luajit' }}
+        with:
+          name: ucl
+          path: out.lua
