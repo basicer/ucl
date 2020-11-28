@@ -13,6 +13,8 @@
 
 ```
 
+![Unit Tests](https://github.com/basicer/ucl/workflows/Unit%20Tests/badge.svg)
+
 ## Features:
 * [Dodekalogue](https://wiki.tcl-lang.org/page/Dodekalogue) style syntax makes use at the command line just as easy as in the editor.
 
