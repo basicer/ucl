@@ -57,7 +57,7 @@ test list-1.29 {basic null treatment} {
     set lrep [list $result [string length $result]]
     string equal $srep $lrep
 } 1
-test list-1.30 {basic null treatment} {
+test list-1.30 {basic null treatment} {luav} {
     set l [list "\0abc" "xyz"]
     set e "\0abc xyz"
     string equal $l $e
