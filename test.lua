@@ -163,6 +163,8 @@ local testFiles = io.glob(dir, fmatch)
 
 -- testFiles = {"tests/misc.ucl"}
 
+local tainted = false
+
 for k,filename in ipairs(testFiles) do
     local h = assert(io.open(filename, 'r'))
     print()
@@ -174,6 +176,7 @@ for k,filename in ipairs(testFiles) do
     end, debug.traceback)
     if not ok then
 		cprint('red', err)
+		tainted = true
     end
 end
 
@@ -194,7 +197,11 @@ for k,v in pairs(fails) do
 	print()
 end
 
-if fail == 0 then
+if tainted then
+	cprint('red', 'Warning: These results may be incomplete due to a test fixture error.')
+end
+
+if fail == 0 and not tainted then
 	os.exit(0)
 else
 	os.exit(1)
