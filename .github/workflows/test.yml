@@ -38,7 +38,8 @@ jobs:
 
       - name: Run Tests
         run: |
-          echo Running tests for ${{ matrix.lua }} `${{ matrix.lua }} -v`
+          echo Running tests for ${{ matrix.lua }}
+          ${{ matrix.lua }} -v
           cd $GITHUB_WORKSPACE
           ${{ matrix.lua }} test.lua
 
