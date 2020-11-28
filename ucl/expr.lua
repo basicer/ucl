@@ -79,7 +79,7 @@ local function climber(tokens, max, v)
 			if not f then error("unknown math function " .. t.name, 0) end
 			local args = {}
 			while not tokens.done() do
-				local r, w = climber(tokens, 0)
+				local r, w = climber(tokens, 0, v)
 
 				table.insert(args, r)
 				if w ~= ',' then break end

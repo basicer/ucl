@@ -632,7 +632,7 @@ function builtin.linsert(interp, list, idx, ...)
 end
 
 function builtin.llength(interp, list)
-	return Value:fromNumber(#list.list)
+	return Value.fromNumber(#list.list)
 end
 
 function builtin.string(interp, command, ...)
@@ -699,4 +699,9 @@ function builtin.lsort(interp, list)
 	return Value.fromList(tosort)
 end
 
+function builtin.variable(interp, ...)
+	local args = argparse("variable name ?value?")(...)
+	local name = args.name.string
+	interp.variables[name] = {name=name, value=Value.none}
+end
 end

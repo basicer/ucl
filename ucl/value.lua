@@ -223,7 +223,9 @@ function props.string(self)
 			table.insert(parts, v.string)
 			if v.kind == ValueType_CommandList then table.insert(parts,']') end
 		end
-		return table.concat(parts,'')
+		local s = table.concat(parts,'')
+		self.string = s
+		return s
 	elseif sv then
 		local s = string.sub(sv[1], sv[2], sv[3])
 		self.string = s
@@ -234,6 +236,30 @@ function props.string(self)
 		return self.string
 	end
 	error("Need a string")
+end
+
+function props.lua(self)
+	local sv = rawget(self,'string_view')
+	if self.kind == ValueType_None then
+		return nil
+	elseif self.kind == ValueType_Number then
+		return self.number
+	elseif self.kind == ValueType_CompoundString then
+		return self.string
+	elseif sv then
+		local s = string.sub(sv[1], sv[2], sv[3])
+		self.string = s
+		self.lua = s
+		return s
+	elseif self.kind == ValueType_List then
+		self.lua = {}
+		for k,v in ipairs(self.list) do
+			self.lua[k] = v.lua
+		end
+		return self.lua
+	else
+		return self.string
+	end
 end
 
 function props.expr_tokens(self)

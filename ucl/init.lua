@@ -170,6 +170,10 @@ function Engine:interactive()
 	return require('ucl.interactive').new(self)
 end
 
+function Engine:state()
+	return newstate(self)
+end
+
 function Engine.new()
 	return setmetatable({
 		commands = setmetatable({}, {__index = builtins}),
