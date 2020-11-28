@@ -210,7 +210,12 @@ function props.string(self)
 	if self.kind == ValueType_None then
 		return ""
 	elseif self.kind == ValueType_Number then
-		return "" .. self.number
+		local i, f = math.modf(self.number)
+		if f == 0 then
+			return "" .. i
+		else
+			return "" .. self.number
+		end
 	elseif self.kind == ValueType_CompoundString then
 		local parts = {}
 		for _,v in ipairs(self.parts) do
