@@ -45,7 +45,7 @@ function interactive_mt:prompt()
 end
 
 function interactive_mt:info(s)
-	local u, v = tokenize.value(s)
+	local _, v = tokenize.value(s)
 	local last = v
 	local idx = 0
 	local path = ">"
@@ -77,7 +77,7 @@ function interactive_mt:info(s)
 	}
 end
 
-function interactive_mt:complete(m, n)
+function interactive_mt:complete(m, _n)
 	if m == nil then m = "" end
 
 	local info
@@ -113,7 +113,7 @@ local banner = {
 	load = env.loadstring and "+" or "-",
 	bits = env.bit and "+" or "-",
 	lua = env.lua,
-	rltype = rltype,
+	rltype = _G.rltype,
 	os = env.os
 }
 

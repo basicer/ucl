@@ -195,7 +195,7 @@ local function compile(s)
 end
 
 
-special['return'] = function(w, v,origin)
+special['return'] = function(w, v, origin)
     if #v.list ~= 2 then return false end
     local args = fargs(w, v, origin)
     w:line("-- return " .. args[2].s)

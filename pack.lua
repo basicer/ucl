@@ -71,7 +71,6 @@ local function include(filename)
 end
 
 local function glob(dir)
-	local pfile
 	if jit and jit.os == "Windows" then
 		local cdc = assert(io.popen("echo %cd%", "r"))
 		local cd = cdc:read("*a"):gsub("%s+$", "")

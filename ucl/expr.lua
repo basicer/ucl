@@ -116,7 +116,7 @@ local function climber(tokens, max, v)
 
 
 	while not tokens.done() do
-		local t = tokens.peek()
+		t = tokens.peek()
 
 		if t == ')' or t == ',' then
 			tokens.take()

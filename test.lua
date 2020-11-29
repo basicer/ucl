@@ -109,7 +109,10 @@ local function runtest(test)
 		if shouldFail and not showall then return end
 		fail = fail + 1
 		cprint('red',"    " .. fail .. ") " .. test.line)
-		fails[fail] = {name = test.line, error = "got " .. encode(result.string) .. " expected " .. encode(test.result.string)}
+		fails[fail] = {
+			name = test.line,
+			error = "got " .. encode(result.string) .. " expected " .. encode(test.result.string)
+		}
 		if bail then os.exit(1) end
 	end
 end
@@ -139,21 +142,21 @@ i.commands.typeof = function(interp, v)
 end
 
 
-for k,v in ipairs({
+for _,v in ipairs({
 	'source', 'file', 'needs', 'testCmdConstraints',
 	'rename', 'lsort', 'testreport'
 }) do
-	i.commands[v] =function(interp, f) return ucl.Value.none end
+	i.commands[v] = function() return ucl.Value.none end
 end
 
 if not io.glob then
-	io.glob = function(dir, match)
+	io.glob = function(where, pattern)
 		local result = {}
-		local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format(dir), 'r'))
+		local pfile = assert(io.popen(("find '%s' -maxdepth 1 -type f -print0"):format(where), 'r'))
 		local list = pfile:read('*a')
 		pfile:close()
 		for filename in list:gmatch('[^%z]+') do
-			if filename:match(match) then table.insert(result, filename) end
+			if filename:match(pattern) then table.insert(result, filename) end
 		end
 		return result
 	end
@@ -165,7 +168,7 @@ local testFiles = io.glob(dir, fmatch)
 
 local tainted = false
 
-for k,filename in ipairs(testFiles) do
+for _,filename in ipairs(testFiles) do
     local h = assert(io.open(filename, 'r'))
     print()
     print(filename)

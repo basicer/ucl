@@ -64,10 +64,10 @@ local setfenv = setfenv or function(fx, env)
 			debug.upvaluejoin(fx, idx, function() return env end, 1)
 			break
 		end
-		
+
 		idx = idx + 1
 	until false
-	return f
+	return fx
 end
 
 local function colorize(fmt, ...)
