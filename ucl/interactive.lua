@@ -1,3 +1,5 @@
+--luacheck: no unused
+
 local tokenize = require('ucl.tokenize')
 local env = require('ucl.env')
 
@@ -77,7 +79,7 @@ function interactive_mt:info(s)
 	}
 end
 
-function interactive_mt:complete(m, _n)
+function interactive_mt:complete(m, n)
 	if m == nil then m = "" end
 
 	local info

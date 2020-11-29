@@ -1,3 +1,5 @@
+-- luacheck: max line length 240
+
 local LuaWriter_mt = {}
 local INDENT = "    "
 local function LuaWriter()
@@ -163,8 +165,8 @@ cmd = function(w, v, origin)
     w:line()
 end
 
-fx = function(w, s, origin)
-    w:fx("interp", function (w)
+fx = function(wx, s, origin)
+    wx:fx("interp", function (w)
         w:line('local ret, retCode, args, cmd, sk')
         for k,v in pairs(s.cmdlist) do
             cmd(w, v, origin .. ".cmdlist[" .. k .. "]")
@@ -174,10 +176,10 @@ fx = function(w, s, origin)
 end
 
 local function compile(s)
-    local w = LuaWriter()
+    local ww = LuaWriter()
 
-    w:write("return ")
-    w:fx("origin", "Value", function(w)
+    ww:write("return ")
+    ww:fx("origin", "Value", function(w)
         local w2 = LuaWriter()
         w2.indent = w.indent
         fx(w2, s, 'origin')
@@ -189,7 +191,7 @@ local function compile(s)
         w:write(w2:toString())
     end)
 
-    local result = w:toString()
+    local result = ww:toString()
     --io.stderr:write(result)
     return result
 end
@@ -271,15 +273,15 @@ special['if'] = function(w, v, origin)
     w:line("if ret.number ~= 0 then")
     local i = w.indent
     w.indent = w.indent .. INDENT
-    for k,vv in pairs(v.list[3].cmdlist) do
+    for k, vv in pairs(v.list[3].cmdlist) do
         cmd(w,vv, origin .. '.list[3].cmdlist[' .. k .. ']')
     end
     if #v.list == 5 then
         w.indent = i
         w:line("else")
         w.indent = w.indent .. INDENT
-        for k,v in pairs(v.list[5].cmdlist) do
-            cmd(w,v, origin .. '.list[5].cmdlist[' .. k .. ']')
+        for k, vv in pairs(v.list[5].cmdlist) do
+            cmd(w, vv, origin .. '.list[5].cmdlist[' .. k .. ']')
         end
     end
     w.indent = i

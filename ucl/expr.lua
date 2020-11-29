@@ -1,3 +1,5 @@
+--luacheck: no unused
+
 local env = require('ucl.env')
 local Value = require 'ucl.value'
 

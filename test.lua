@@ -149,6 +149,8 @@ for _,v in ipairs({
 	i.commands[v] = function() return ucl.Value.none end
 end
 
+-- luacheck: globals io.glob
+
 if not io.glob then
 	io.glob = function(where, pattern)
 		local result = {}
