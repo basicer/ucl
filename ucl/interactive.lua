@@ -20,8 +20,6 @@ function interactive_mt:sline(s)
 		end
 		local line = self.buffer
 		self.buffer = false
-
-		
 		return line
 	end
 	return false
@@ -31,7 +29,7 @@ function interactive_mt:line(s)
 	local r = self:sline(s)
 	if not r then return false end
 	local ok, rres = pcall(function()
-		return self.engine:eval(ast)
+		return self.engine:eval(r)
 	end)
 	if ok then
 		if rres ~= nil then
@@ -83,7 +81,7 @@ function interactive_mt:complete(m, n)
 	if m == nil then m = "" end
 
 	local info
-	if buffer then
+	if self.buffer then
 		info = self:info(self.buffer .. "\n" .. m)
 	else
 		info = self:info(m)
@@ -92,7 +90,7 @@ function interactive_mt:complete(m, n)
 	local t = self.engine.commands
 	local words = {}
 	while t do
-		for k,v in pairs(t) do
+		for k,_ in pairs(t) do
 			if k:sub(1, #target) == target then
 				table.insert(words, k)
 			end
@@ -110,5 +108,32 @@ local function new(engine)
 	}, {__index=interactive_mt})
 end
 
+local banner = {
+	version = "0.1",
+	load = env.loadstring and "+" or "-",
+	bits = env.bit and "+" or "-",
+	lua = env.lua,
+	rltype = rltype,
+	os = env.os
+}
+
+function interactive_mt:banner()
+	if env.tty then
+		local str = (([[
+	                               |
+	                       ##      |  Micro Command Language
+	     ##  ##    #####   ##      |
+	     ##  ##    ##      ##      |  Version: ${version}
+	     ######    #####   ####    |  ${lua} ${bits}bit ${load}load ${rltype}
+	         ###                   |
+	                               |
+		]]):gsub('%${([^}]+)}', function(k)
+			return banner[k]
+		end))
+
+		str = env.colorize(str:gsub("#", "{cyan-fg}{cyan-bg}#{/}"))
+		print(str)
+	end
+end
 
 return {new=new}

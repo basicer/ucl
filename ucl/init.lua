@@ -59,7 +59,7 @@ local function ucl_set(interp, key, value)
 			interp.variables[n] = {name=Value.fromString(k), array={}}
 		end
 		if value then
-			interp.variables[n].array[idx] = {name=Value.fromString(idx), value=value} 
+			interp.variables[n].array[idx] = {name=Value.fromString(idx), value=value}
 		end
 		local vidx = interp.variables[n].array[idx]
 		if vidx then return vidx.value else return Value.none end

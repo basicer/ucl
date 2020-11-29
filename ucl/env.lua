@@ -57,7 +57,7 @@ end
 local setfenv = setfenv or function(fx, env)
 	local idx = 1
 	repeat
-		local upvalue = debug.getupvalue(fx, idx)
+		local name = debug.getupvalue(fx, idx)
 		if not name then
 			break
 		elseif name == "__ENV" then

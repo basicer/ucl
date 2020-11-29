@@ -6,15 +6,6 @@ local i = ucl.new()
 i.flags.jit = 1
 local interactive = i:interactive()
 
-local banner = {
-	version = "0.1",
-	load = env.loadstring and "+" or "-",
-	bits = env.bit and "+" or "-",
-	lua = env.lua,
-	rltype = rltype,
-	os = env.os
-}
-
 if arg[1] then
 	local h, err = io.open(arg[1], 'r')
 	if not h then error(err, 0) end
@@ -22,28 +13,13 @@ if arg[1] then
 	os.exit()
 end
 
-if env.tty then
-	local banner = (([[
-                               |
-                       ##      |  Micro Command Language
-     ##  ##    #####   ##      |
-     ##  ##    ##      ##      |  Version: ${version}
-     ######    #####   ####    |  ${lua} ${bits}bit ${load}load ${rltype}
-         ###                   |
-                               |
-	]]):gsub('%${([^}]+)}', function(k)
-		return banner[k]
-	end))
-
-	banner = env.colorize(banner:gsub("#", "{cyan-fg}{cyan-bg}#{/}"))
-	print(banner)
-end
+interactive:banner()
 
 
 
 repeat
 	local line, code = i:eval("read")
-	if code ~= 0 then break end
+	if code ~= 0 and code ~= nil then break end
 
 	local ok, rres = pcall(function()
 		return i:eval(line)

@@ -146,7 +146,7 @@ function Value.from(v)
 		local isList = true
 		for kk,vv in pairs(v) do
 			if type(tonumber(kk)) ~= "number" then
-				isList = false 
+				isList = false
 			end
 			mapped[kk] = Value.from(vv)
 		end
