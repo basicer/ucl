@@ -139,6 +139,21 @@ function Value.from(v)
 		return Value.fromString(v)
 	elseif type(v) == 'nil' then
 		return Value.none
+	elseif type(v) == 'table' then
+		local mt = getmetatable(v)
+		if mt == Value.metaTable then return v end
+		local mapped = {}
+		local isList = true
+		for kk,vv in pairs(v) do
+			if type(tonumber(kk)) ~= "number" then
+				isList = false 
+			end
+			mapped[kk] = Value.from(vv)
+		end
+		if not isList then
+			error("Type from table that wasnt a list")
+		end
+		return Value.fromList(mapped)
 	else
 		error("Type from:" .. type(v))
 	end
