@@ -1,4 +1,5 @@
 local env = require('ucl.env')
+local numToStr = env.numToStr
 
 local Value = {}
 
@@ -210,12 +211,7 @@ function props.string(self)
 	if self.kind == ValueType_None then
 		return ""
 	elseif self.kind == ValueType_Number then
-		local i, f = math.modf(self.number)
-		if f == 0 then
-			return "" .. i
-		else
-			return "" .. self.number
-		end
+		return numToStr(self.number)
 	elseif self.kind == ValueType_CompoundString then
 		local parts = {}
 		for _,v in ipairs(self.parts) do
@@ -307,7 +303,7 @@ function props.interp(self)
 				if not dict[n].array[idx] then
 					return Value.none
 				end
-				return dict[n].array[idx]
+				return dict[n].array[idx].value
 			end
 			--print("VAR /" ..  o .. "/", dict[o] and dict[o].value or "?")
 			if not dict[o] then

@@ -29,6 +29,26 @@ local function x(v, state)
 	end
 end
 
+local function ucl_var(interp, k)
+	local va, vb = k:find("%(.*%)$")
+	if va then
+		local idx = k:sub(va+1, vb-1)
+		local n = k:sub(1, va-1)
+		if not interp.variables[n] then
+			interp.variables[n] = {name=Value.fromString(k), array={}}
+		end
+		return interp.variables[n].array[idx]
+	end
+
+	local vref
+	repeat
+		vref = interp.variables[k]
+		if vref and vref.deleted then interp.variables[k] = nil end
+	until not vref or not vref.deleted
+
+	return vref
+end
+
 local function ucl_set(interp, key, value)
 	local k = key.string
 	local va, vb = k:find("%(.*%)$")
@@ -38,18 +58,27 @@ local function ucl_set(interp, key, value)
 		if not interp.variables[n] then
 			interp.variables[n] = {name=Value.fromString(k), array={}}
 		end
-		if value then interp.variables[n].array[idx] = value end
-		return interp.variables[n].array[idx]
+		if value then
+			interp.variables[n].array[idx] = {name=Value.fromString(idx), value=value} 
+		end
+		local vidx = interp.variables[n].array[idx]
+		if vidx then return vidx.value else return Value.none end
 	end
 
-	if not interp.variables[k] then
+	local vref
+	repeat
+		vref = interp.variables[k]
+		if vref and vref.deleted then interp.variables[k] = nil end
+	until not vref or not vref.deleted
+
+	if not vref then
 		interp.variables[k] = {name=key, value=value}
 		return value
 	elseif value then
-		interp.variables[k].value = value
+		vref.value = value
 		return value
 	else
-		return interp.variables[k].value
+		return vref.value
 	end
 end
 
@@ -130,9 +159,11 @@ local function newstate(engine)
 		variables = globals,
 		globals = globals,
 		level = 0,
-		flags = engine.flags
+		flags = engine.flags,
+		print = engine.print
 	}
 	state.set = function(...) return ucl_set(state, ...) end
+	state.var = function(...) return ucl_var(state, ...) end
 	state.eval = function(s, code) return ucl_eval(code, s) end
 	state.expr = function(s, code) return ucl_expr(code, s) end
 	state.child = function(self)
@@ -152,10 +183,12 @@ local function newstate(engine)
 			child = self.child,
 			flags = self.flags,
 			up = self,
+			print = self.print
 		}
 		c.eval = function(s, code) return ucl_eval(code, s) end
 		c.expr = function(s, code) return ucl_expr(code, s) end
 		c.set = function(...) return ucl_set(c, ...) end
+		c.var = function(...) return ucl_var(c, ...) end
 		return c;
 	end
 	return state
@@ -178,7 +211,8 @@ function Engine.new()
 	return setmetatable({
 		commands = setmetatable({}, {__index = builtins}),
 		globals = {},
-		flags = {jit = 0}
+		flags = {jit = 0},
+		print = print
 	}, {
 		__index = Engine
 	})

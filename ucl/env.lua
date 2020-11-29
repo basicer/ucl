@@ -116,6 +116,19 @@ local function colorize(fmt, ...)
 	end
 end
 
+local function numToStr(n) return '' .. n end
+
+if ('' .. 3.0)  ~= "3" then
+	numToStr = function(n)
+		local i, f = math.modf(n)
+		if f == 0 then
+			return "" .. i
+		else
+			return "" .. n
+		end
+	end
+end
+
 return {
 	unpack = unpack,
 	bit = bit,
@@ -124,5 +137,6 @@ return {
 	lua = version,
 	colorize = colorize,
 	tty = tty,
-	os = os
+	os = os,
+	numToStr = numToStr
 }

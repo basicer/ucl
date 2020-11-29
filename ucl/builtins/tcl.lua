@@ -44,7 +44,7 @@ local arrays = {
 		local result = {}
 		for k,v in pairs(var.array) do
 			table.insert(result, Value.fromString(k))
-			table.insert(result, v)
+			table.insert(result, v.value)
 		end
 		return Value.fromList(result)
 	end,
@@ -78,7 +78,11 @@ local arrays = {
 		end
 
 		for i=1,#args,2 do
-			var.array[args[i].string] = args[i+1]
+			local ais = args[i].string
+			if not var.array[ais] then
+				var.array[ais] = {}
+			end
+			var.array[ais].value = args[i+1]
 		end
 		return Value.none
 	end,
@@ -154,7 +158,7 @@ local infos = {
 	end,
 	exists = function(interp, name, ...)
 		local args = argparse("info exists varName")(Value.fromString('commands'), name, ...)
-		return interp.variables[name.string] and Value.True or Value.False
+		return interp.var(name.string) and Value.True or Value.False
 	end,
 	vars = function(interp)
 		local result = {}
@@ -198,7 +202,7 @@ local infos = {
 }
 
 function builtin.puts(interp, ...)
-	print(...)
+	interp.print(...)
 end
 
 local function reducer(f)
@@ -321,6 +325,42 @@ function builtin.uplevel(interp, level, ...)
 	end
 
 	return target:eval(v)
+end
+
+function builtin.upvar(interp, level, ...)
+	local va = {...}
+
+	if not level then
+		error('wrong # args: should be "upvar ?level? otherVar localVar ?otherVar localVar ...?"', 0)
+	end
+
+	local v
+	local target = interp
+	local ups = 1
+
+	if tonumber(level.string) ~= nil then
+		for i=1,level.number do
+			target = target.up
+		end
+	elseif level.string:sub(1,1) == "#" then
+		local locate = tonumber(level.string:sub(2))
+		if locate > target.level then error('bad level', 0) end
+		while target.level > locate do
+			if not target.up then error('bad level', 0) end
+			target = target.up
+		end
+	else
+		target = target.up
+		table.insert(va, 1, level)
+	end
+
+	for i=1,#va,2 do
+		local n1 = va[i].string
+		local src = target.var(n1)
+		interp.variables[va[i+1].string] = src
+	end
+
+	return Value.none
 end
 
 function builtin.info(interp, command, ...)
@@ -554,7 +594,11 @@ end
 
 
 function builtin.unset(interp, key)
-	interp.variables[key.string] = nil
+	local ks = key.string
+	if interp.variables[ks] then
+		interp.variables[ks].deleted = true
+	end
+	interp.variables[ks] = nil
 end
 
 function builtin.range(interp, from, to, step)

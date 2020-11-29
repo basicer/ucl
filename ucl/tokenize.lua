@@ -298,7 +298,6 @@ end
 
 local function new()
 	local t = setmetatable({
-		s = s,
 		progress = {},
 		errors = {}
 	}, {__index=tokenizer_mt})
