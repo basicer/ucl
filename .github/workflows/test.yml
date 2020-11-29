@@ -36,19 +36,26 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: Run Tests
+      - name: Run Unit Tests
         run: |
           echo Running tests for ${{ matrix.lua }}
           ${{ matrix.lua }} -v
           cd $GITHUB_WORKSPACE
           ${{ matrix.lua }} test.lua
 
+      - name: Run Unit Tests (JIT)
+        run: |
+          echo Running tests with jit for ${{ matrix.lua }}
+          ${{ matrix.lua }} -v
+          cd $GITHUB_WORKSPACE
+          ${{ matrix.lua }} test.lua -j
+
       - name: Package
-        run: ${{ matrix.lua }} pack.lua
+        run: mkdir dist && ${{ matrix.lua }} pack.lua dist/ucl.lua
         if: ${{ matrix.lua == 'luajit' }}
 
       - uses: actions/upload-artifact@v2
         if: ${{ matrix.lua == 'luajit' }}
         with:
           name: ucl
-          path: out.lua
+          path: dist
