@@ -18,9 +18,11 @@ local builtin = setmetatable({}, {
 	__newindex = function(self, k, v)
 		if type(v) == 'function' then
 			rawset(self, k, setmetatable({
-				fx = v
+				fx = v,
+				builtin = k
 			}, command_mt))
 		else
+			v.builtin = k
 			rawset(self, k, v)
 		end
 	end

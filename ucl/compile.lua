@@ -49,6 +49,13 @@ function LuaWriter_mt:write(s)
     table.insert(self.parts, s)
 end
 
+function LuaWriter_mt:import(s)
+   for line in string.gmatch(s,'[^\r\n]+') do
+        self:line(line)
+    end
+end
+
+
 function LuaWriter_mt:fx(...)
     self:write("function(")
     local args = {...}
@@ -64,6 +71,13 @@ function LuaWriter_mt:fx(...)
     args[#args](self)
     self.indent = i
     self:line("end")
+end
+
+function LuaWriter_mt:i(f)
+    local i = self.indent
+    self.indent = self.indent .. INDENT
+    f()
+    self.indent = i
 end
 
 function LuaWriter_mt:doend(fx)
@@ -154,20 +168,7 @@ local function fargs(w, v, origin)
     return args
 end
 
-cmd = function(w, v, origin)
-    if v.list[1].type == "RawString" then
-        if special[v.list[1].string] then
-            if special[v.list[1].string](w,v,origin) then
-                return
-            end
-        end
-    end
-    if v.list[1].string:sub(1,1) == "#" then
-        return
-    end
-    w:line("-- origin: " .. origin)
-    local args = fargs(w, v, origin)
-    w:line("cmd = interp.commands[" .. args[1].s .. "]")
+local fallback =  function(w, args)
     w:line("if not cmd and interp.commands.unknown then")
     w:line("    cmd = function(self, ...) return interp.commands.unknown(self, " .. args[1].v .. ", ...) end")
     w:line("end")
@@ -183,6 +184,38 @@ cmd = function(w, v, origin)
 
     w:line("if retCode ~= 0 and retCode ~= nil then return ret, retCode end")
     w:line()
+end
+
+cmd = function(w, v, origin)
+    if v.list[1].string:sub(1,1) == "#" then
+        return
+    end
+
+    w:line("-- origin: " .. origin)
+    local args = fargs(w, v, origin)
+    w:line("cmd = interp.commands[" .. args[1].s .. "]")
+
+    if v.list[1].type == "RawString" then
+        local s = v.list[1].string
+
+        if special[s] then
+            local sw = LuaWriter()
+            sw.hoisted = w.hoisted
+
+            if special[v.list[1].string](sw, v, origin, args) then
+                w:line("-- Special implementaton for " .. s)
+                w:line("if cmd.builtin == " .. q(s) .. " then")
+                w:i(function() w:import(sw:toString()) end)
+                w:line("else")
+                w:i(function() fallback(w, args) end)
+                w:line("end")
+                return
+            end
+        end
+    end
+
+
+    fallback(w, args)
 end
 
 fx = function(wx, s, origin)
@@ -217,16 +250,6 @@ local function compile(s)
 end
 
 
-special['return'] = function(w, v, origin)
-    if #v.list ~= 2 then return false end
-    local args = fargs(w, v, origin)
-    w:line("-- return " .. args[2].s)
-    w:write("if true then return ")
-    w:write(args[2].v)
-    w:line(", 2 end")
-    return true
-end
-
 local function ep(w, t)
     if type(t) == 'table' then
         if t.type == "variable" then
@@ -244,12 +267,22 @@ local function ep(w, t)
 end
 
 local function expr(w, whats)
-    local ops = { ['+']= '+', ['<'] = '<', ['-'] = '-' }
+    local ops = { ['+']= '+', ['-'] = '-', ['*']= '*', ['/'] = '/' }
     repeat
         if whats.a.type ~= "RawString" then break end
 
         local tokens = whats.a.expr_tokens
         w:write("--[[ #T:" .. #tokens .. "]] ")
+        if #tokens == 1 then
+            if tostring(tokens[1]):match("^%d$") then
+                w:write(whats.v)
+            else
+                w:write("Value.fromNumber(")
+                ep(w, tokens[1])
+                w:write(")")
+            end
+            return
+        end
         if #tokens ~=3 then break end
         local op = tokens[2]
 
@@ -277,13 +310,24 @@ local function expr(w, whats)
     w:write("interp:expr(" .. whats.v .. ")")
 end
 
-special['if'] = function(w, v, origin)
+-- luacheck: push no unused args
+
+special['return'] = function(w, v, origin)
+    if #v.list ~= 2 then return false end
+    local args = fargs(w, v, origin)
+    w:line("-- return " .. args[2].s)
+    w:write("if true then return ")
+    w:write(args[2].v)
+    w:line(", 2 end")
+    return true
+end
+
+special['if'] = function(w, v, origin, args)
 
     if #v.list ~= 3 and not (#v.list == 5 and v.list[4].string == "else") then
         return false
     end
 
-    local args = fargs(w, v, origin)
     w:line("-- if " .. args[2].s)
 
     w:write("ret = ")
@@ -309,17 +353,16 @@ special['if'] = function(w, v, origin)
     return true
 end
 
-special['expr'] = function(w, v, origin)
+special['expr'] = function(w, v, origin, args)
     if #v.list ~= 2 then return false end
-    local args = fargs(w, v, origin)
     w:write("ret = ")
     expr(w, args[2])
     w:line()
     return true
 end
 
-special['puts'] = function(w, v, origin)
-    local args = fargs(w, v, origin)
+special['puts'] = function(w, v, origin, args)
+
     w:write("interp.print(")
     for i=2,#args do
         if i ~= 2 then w:write(",") end
@@ -327,7 +370,10 @@ special['puts'] = function(w, v, origin)
     end
     w:write(")")
     w:line()
+    w:line("ret, retCode = Value.none, 0")
     return true
 end
+
+-- luacheck: pop
 
 return compile

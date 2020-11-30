@@ -50,6 +50,8 @@ local function ucl_var(interp, k)
 end
 
 local function ucl_set(interp, key, value)
+	if type(key) == "string" then key = Value.fromString(key) end
+
 	local k = key.string
 	local va, vb = k:find("%(.*%)$")
 	if va then
@@ -104,6 +106,10 @@ local function ucl_eval(code, state)
 		local c = x(lst[1], state)
 		if c.string:sub(1,1) ~= "#" then
 
+			for i=2,#lst do
+				mapped[i-1] = x(lst[i], state)
+			end
+
 			local cmd = state.commands[c.string]
 			if not cmd and state.commands.unknown then
 				cmd = function(self, ...) return state.commands.unknown(self, c, ...) end
@@ -126,10 +132,6 @@ local function ucl_eval(code, state)
 				else
 					error("Invalid Command: " .. c.string, 0)
 				end
-			end
-
-			for i=2,#lst do
-				mapped[i-1] = x(lst[i], state)
 			end
 
 			--local s = lst[1].string
