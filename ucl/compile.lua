@@ -17,8 +17,17 @@ end
 
 function LuaWriter_mt:hoist(s, val)
     local idx = #self.hoisted+1
-    self.hoisted[idx] = s
-    if val then self.hoisted[idx] = self.hoisted[idx] .. ' --[====[' .. val.string .. ']====]--' end
+
+    if val then
+        local sv = val.string
+        if #sv < 10 and false then
+            self.hoisted[idx] = 'Value.fromString(' .. string.format("%q", sv) .. ')'
+        else
+            self.hoisted[idx] = s .. ' --[====[' .. sv .. ']====]--'
+        end
+    else
+        self.hoisted[idx] = s
+    end
     return "hoisted[" .. idx .. "]"
 end
 
@@ -66,15 +75,26 @@ function LuaWriter_mt:doend(fx)
     self:line("end")
 end
 
+local function q(s)
+    if true then
+        return string.format("%q", s)
+    else
+        return '([===[' .. s .. ']===])'
+    end
+end
 
 function LuaWriter_mt:string(s)
-    self:write("([==[")
-    self:write(s)
-    self:write("]==])")
+    if true then
+        self:write(q(s))
+    else
+        self:write("([==[")
+        self:write(s)
+        self:write("]==])")
+    end
 end
 
 local function wv(w, v)
-    w:write(w:hoist('Value.fromString([===[' .. v.string .. ']===])'))
+    w:write(w:hoist('Value.fromString(' .. q(v.string) .. ')'))
 end
 
 local cmd, fx
@@ -128,7 +148,7 @@ local function fargs(w, v, origin)
         else
             --args[i] = { v = w:hoist('Value.fromString([===[' .. vv.string .. ']===])'), s = '([===[' .. vv.string .. ']===])'  }
             local h = w:hoist(origin .. '.list[' .. i .. ']', vv)
-            args[i] = { v = h, s = '([===[' .. vv.string .. ']===])', a = vv  }
+            args[i] = { v = h, s = q(vv.string), a = vv  }
         end
     end
     return args
@@ -167,7 +187,7 @@ end
 
 fx = function(wx, s, origin)
     wx:fx("interp", function (w)
-        w:line('local ret, retCode, args, cmd, sk')
+        w:line('local ret, retCode, args, cmd, sk = Value.none, 0')
         for k,v in pairs(s.cmdlist) do
             cmd(w, v, origin .. ".cmdlist[" .. k .. "]")
         end
@@ -210,11 +230,11 @@ end
 local function ep(w, t)
     if type(t) == 'table' then
         if t.type == "variable" then
-            w:write('(interp.variables[([===[')
-            w:write(t.name)
-            w:write(']===])] or error("no such variable ' .. t.name .. '", 0)).value.number')
+            w:write('(interp.variables[')
+            w:string(t.name)
+            w:write('] or error("no such variable ' .. t.name .. '", 0)).value.number')
         elseif t.type == "cmd" then
-            local root = w:hoist('Value.fromString([====[' .. t.value.string .. ']====])', t.value)
+            local root = w:hoist('Value.fromString(' .. q(t.value.string) .. ')', t.value)
             interp(w, t.value, root)
             w:write(".number")
         end
@@ -294,6 +314,18 @@ special['expr'] = function(w, v, origin)
     local args = fargs(w, v, origin)
     w:write("ret = ")
     expr(w, args[2])
+    w:line()
+    return true
+end
+
+special['puts'] = function(w, v, origin)
+    local args = fargs(w, v, origin)
+    w:write("interp.print(")
+    for i=2,#args do
+        if i ~= 2 then w:write(",") end
+        w:write(args[i].s)
+    end
+    w:write(")")
     w:line()
     return true
 end

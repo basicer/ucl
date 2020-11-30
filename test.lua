@@ -70,7 +70,7 @@ local function runtest(test)
 		shouldFail = true
 	end
 
-	local ok, result = pcall(test.interp.eval, test.interp, test.body)
+	local ok, result = pcall(test.interp.eval, test.body)
 
 
 	if test.returnCodes then

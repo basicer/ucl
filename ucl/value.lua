@@ -154,12 +154,14 @@ function Value.from(v)
 			error("Type from table that wasnt a list")
 		end
 		return Value.fromList(mapped)
+
 	else
 		error("Type from:" .. type(v))
 	end
 end
 
 function Value.fromList(slist)
+	assert(type(slist) == "table")
 	return setmetatable({
 		kind = ValueType_List,
 		list = slist
@@ -167,6 +169,7 @@ function Value.fromList(slist)
 end
 
 function Value.fromCmdList(slist)
+	assert(type(slist) == "table")
 	return setmetatable({
 		kind = ValueType_CommandList,
 		cmdlist = slist
@@ -285,7 +288,7 @@ function props.interp(self)
 		if self.kind == ValueType_RawString then
 			return self
 		elseif self.kind == ValueType_CommandList then
-			return state:eval(self)
+			return state.eval(self)
 		elseif self.kind == ValueType_List then
 			local rparts = {}
 			for k,v in ipairs(self.list) do
@@ -296,7 +299,7 @@ function props.interp(self)
 			local rparts = {}
 			for k,v in ipairs(self.parts) do
 				if v.kind == ValueType_CommandList then
-					rparts[k] = state:eval(v)
+					rparts[k] = state.eval(v)
 				else
 					rparts[k] = v:interp(state)
 				end

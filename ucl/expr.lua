@@ -91,6 +91,9 @@ local function climber(tokens, max, v)
 			if not v.variables[t.name] then
 				error('no such variable ' .. t.name, 0)
 			end
+			if v.variables[t.name].array then
+				error('thats an array', 0)
+			end
 			acc = v.variables[t.name].value.string
 			acc = tonumber(acc) or acc
 		elseif t.type == 'cmd' then

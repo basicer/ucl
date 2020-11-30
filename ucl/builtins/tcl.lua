@@ -234,7 +234,7 @@ function builtin.array(interp, command, ...)
 end
 
 function builtin.catch(interp, code, var)
-	local ok, ret, retCode = pcall(interp.eval, interp, code)
+	local ok, ret, retCode = pcall(interp.eval, code)
 	if ok then
 		if var then interp.set(var, ret) end
 		return Value.fromNumber(retCode or ReturnCode_Ok), ReturnCode_Ok
@@ -287,7 +287,7 @@ function builtin.eval(interp, ...)
 		v = Value.fromString(s) --Todo Make CompoundString
 	end
 
-	return interp:eval(v)
+	return interp.eval(v)
 end
 
 function builtin.uplevel(interp, level, ...)
@@ -324,7 +324,7 @@ function builtin.uplevel(interp, level, ...)
 		v = Value.fromList(args)
 	end
 
-	return target:eval(v)
+	return target.eval(v)
 end
 
 function builtin.upvar(interp, level, ...)
@@ -393,7 +393,7 @@ function builtin.foreach(interp, var, list, body)
 		target.value = v
 
 		if tidx == #vlist then
-			ret, retCode = interp:eval(body)
+			ret, retCode = interp.eval(body)
 
 			if retCode == ReturnCode_Break then
 				break;
@@ -487,9 +487,9 @@ builtin['if'] = function(interp, expr, thenword, body, elseword, ebody)
 
 	local result = interp:expr(expr, interp)
 	if result.number ~= 0 then
-		return interp:eval(body)
+		return interp.eval(body)
 	elseif ebody then
-		return interp:eval(ebody)
+		return interp.eval(ebody)
 	else
 		return Value.none
 	end
@@ -537,7 +537,7 @@ function builtin.switch(interp, v, ...)
 
 	while i <= #va do
 		if v == va[i] or v.string == 'default' then
-			return interp:eval(va[i+1])
+			return interp.eval(va[i+1])
 		end
 		i = i + 2
 	end
@@ -562,7 +562,7 @@ local proc_mt = {
 			end
 			rawset(state.variables, v.string, {name = v, value = vv})
 		end
-		local final, retCode = state:eval(self.body)
+		local final, retCode = state.eval(self.body)
 		return final, ReturnCode_Ok
 	end
 }
@@ -692,7 +692,7 @@ end
 builtin['while'] = function(interp, cond, body)
 	local ret, retCode
 	while interp:expr(cond, interp).number ~= 0 do
-		ret, retCode = interp:eval(body)
+		ret, retCode = interp.eval(body)
 		if retCode == ReturnCode_Break then
 			break;
 		elseif retCode == ReturnCode_Continue then
@@ -708,9 +708,9 @@ end
 builtin['for'] = function(interp, start, test, next, body)
 	if not body then error('wrong # args: should be "for start test next body"', 0) end
 	local ret, retCode
-	interp:eval(start)
+	interp.eval(start)
 	while interp:expr(test).number ~= 0 do
-		ret, retCode = interp:eval(body)
+		ret, retCode = interp.eval(body)
 		if retCode == ReturnCode_Break then
 			break;
 		elseif retCode == ReturnCode_Continue then
@@ -719,7 +719,7 @@ builtin['for'] = function(interp, start, test, next, body)
 		else
 			return ret, retCode
 		end
-		interp:eval(next)
+		interp.eval(next)
 	end
 	return ret
 end

@@ -187,7 +187,7 @@ function builtin.loop(interp, body)
 	local ret, retCode
 	if not body then error("no body to loop?", 0) end
 	while true do
-		ret, retCode = interp:eval(body)
+		ret, retCode = interp.eval(body)
 		if retCode == ReturnCode_Break then
 			break;
 		elseif retCode == ReturnCode_Continue then

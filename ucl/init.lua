@@ -23,7 +23,7 @@ local builtins = require('ucl.builtins.all')
 
 local function x(v, state)
 	if v.type == "CList" then
-		return state:eval(v)
+		return state.eval(v)
 	else
 		return v:interp(state)
 	end
@@ -164,7 +164,7 @@ local function newstate(engine)
 	}
 	state.set = function(...) return ucl_set(state, ...) end
 	state.var = function(...) return ucl_var(state, ...) end
-	state.eval = function(s, code) return ucl_eval(code, s) end
+	state.eval = function(code) return ucl_eval(code, state) end
 	state.expr = function(s, code) return ucl_expr(code, s) end
 	state.child = function(self)
 		local cmds
@@ -185,7 +185,7 @@ local function newstate(engine)
 			up = self,
 			print = self.print
 		}
-		c.eval = function(s, code) return ucl_eval(code, s) end
+		c.eval = function(code) return ucl_eval(code, c) end
 		c.expr = function(s, code) return ucl_expr(code, s) end
 		c.set = function(...) return ucl_set(c, ...) end
 		c.var = function(...) return ucl_var(c, ...) end
@@ -196,7 +196,7 @@ end
 
 function Engine:eval(code, state)
 	state = state or newstate(self)
-	return state:eval(code)
+	return state.eval(code)
 end
 
 function Engine:interactive()
