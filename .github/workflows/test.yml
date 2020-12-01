@@ -21,13 +21,26 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        lua: [lua5.1, lua5.2, lua5.3, luajit]
+        lua: [lua5.1, lua5.2, lua5.3, lua5.4, luajit]
      
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Install packages
         run: sudo apt-get install ${{ matrix.lua }}
+        if: ${{ matrix.lua != 'lua5.4' }}
+
+      - name: Build Lua
+        if: ${{ matrix.lua == 'lua5.4' }}
+        run: |
+          wget https://www.lua.org/ftp/lua-5.4.1.tar.gz
+          tar -xvzf lua-5.4.1.tar.gz
+          cd lua-5.4.1
+          make linux
+          sudo make install
+          sudo ln -s /usr/local/bin/lua /usr/local/bin/lua5.4
+          cd ..
+          rm -r lua-5.4.1 lua-5.4.1.tar.gz
 
       - name: Install luarocks
         run: sudo apt-get install luarocks && sudo luarocks install bit32
