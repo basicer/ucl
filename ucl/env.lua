@@ -22,23 +22,36 @@ if havejit then
 	version = jit.version or version
 end
 
+local loadstring = _G.loadstring or _G.load
+
+if loadstring then
+	local ok, v = pcall(loadstring("return 2 + 2"))
+	if not ok or v ~= 4 then loadstring = false end
+end
+
 if not bit then
 	pcall(function()
 		bit = require('bit32')
 	end)
 end
 
+if not bit and loadstring and version == "Lua 5.4" then
+	bit = loadstring([===[
+	return {
+		lshift = function(a,b) return a << b end,
+		arshift = function(a,b) return a >> b end,
+		band = function(a,b) return a & b end,
+		bor = function(a,b) return a | b end,
+		bxor = function(a,b) return a ~ b end,
+		bnot = function(a) return ~a end
+	}
+	]===])()
+end
+
 if not bit then
 	bit = setmetatable({}, {__index = function()
 		return function() error('bit32 library not available', 0) end
 	end})
-end
-
-local loadstring = _G.loadstring or _G.load
-
-if loadstring then
-	local ok, v = pcall(loadstring("return 2 + 2"))
-	if not ok or v ~= 4 then loadstring = false end
 end
 
 local setfenv = setfenv or function(fx, env)
