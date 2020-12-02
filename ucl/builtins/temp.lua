@@ -168,7 +168,7 @@ function  builtin.read(interp, prompt)
 	read_history()
 	local r
 	while true do
-		local s = readline(env.colorize("{green-fg}%s>{/} ", prompt and prompt.string or interactive:prompt()))
+		local s = readline(interactive.colorize("{green-fg}%s>{/} ", prompt and prompt.string or interactive:prompt()))
 		if s == nil then
 			return Value.none, ReturnCode_Break
 		end
@@ -201,8 +201,31 @@ function builtin.loop(interp, body)
 end
 
 function builtin.print(interp, ...)
-	print(...)
+	intep.print(...)
 	return Value.none
+end
+
+function builtin.roll(interp, s)
+	local n, s = string.match(s.string, "(%d*)d(%d+)")
+	if n == "" then n = 1 else n = tonumber(n) end
+	s = tonumber(s)
+	local str, num, list = "", 0, {}
+
+	for i=1,n do
+		if i ~= 1 then str = str .. ' + ' end
+		local roll = 1+math.floor(math.random() * s)
+		list[i] = Value.fromNumber(roll)
+		num = num + roll
+		str = str .. roll
+	end
+	
+	if n > 0 then str = str .. " = " .. num end
+
+	local out = Value.magic()
+	out.string = str
+	out.number = num
+	out.list = list
+	return out
 end
 
 end

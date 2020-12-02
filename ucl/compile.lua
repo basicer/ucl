@@ -132,7 +132,11 @@ local function interp(w, v, origin)
                 w:line("if retCode ~= 0 and retCode ~= nil then return ret, retCode end")
                 w:line("o[" .. i .. "] = ret")
             end
-            w:line('return Value.fromCompoundList(o), retCode')
+            if v.seperator == "" then
+                w:line('return Value.fromCompoundList(o), retCode')
+            else
+                w:line('return Value.fromCompoundList(o,' .. q(v.seperator) .. '), retCode')
+            end
         end)
         w:write(")()")
     elseif v.type == "Variable" then

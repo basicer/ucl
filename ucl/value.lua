@@ -11,6 +11,9 @@ local ValueType_List = 4
 local ValueType_CommandList = 5
 local ValueType_CompoundString = 6
 local ValueType_Variable = 7
+local ValueType_Map = 8
+local ValueType_Foreign = 9
+local ValueType_Magic = 10
 
 
 local Scanner = {}
@@ -184,10 +187,11 @@ function Value.fromNumber(n)
 	}, Value.metaTable)
 end
 
-function Value.fromCompoundList(parts)
+function Value.fromCompoundList(parts, seperator)
 	return setmetatable({
 		kind = ValueType_CompoundString,
-		parts = parts
+		parts = parts,
+		seperator = seperator or ''
 	}, Value.metaTable)
 end
 
@@ -197,6 +201,13 @@ function Value.fromBoolean(v)
 		number = v and 1 or 0
 	}, Value.metaTable)
 end
+
+function Value.magic()
+	return setmetatable({
+		kind = ValueType_Magic,
+	}, Value.metaTable)
+end
+
 
 local function unescape(s)
 	local changed = false
@@ -237,7 +248,7 @@ function props.string(self)
 			table.insert(parts, v.string)
 			if v.kind == ValueType_CommandList then table.insert(parts,']') end
 		end
-		local s = table.concat(parts,'')
+		local s = table.concat(parts, self.seperator)
 		self.string = s
 		return s
 	elseif sv then
@@ -304,7 +315,7 @@ function props.interp(self)
 					rparts[k] = v:interp(state)
 				end
 			end
-			return Value.fromCompoundList(rparts)
+			return Value.fromCompoundList(rparts, self.seperator)
 		elseif self.kind == ValueType_Variable then
 			local o = self.string:sub(2)
 			o = o:gsub("(%b{})", function(s) return s:sub(2,-2) end)
@@ -313,10 +324,10 @@ function props.interp(self)
 				local idx = o:sub(va+1, vb-1)
 				local n = o:sub(1, va-1)
 				if not dict[n] then
-					error('cant read "' .. o .. '": no such variable', 0)
+					error('can\'t read "' .. o .. '": no such variable', 0)
 				end
 				if not dict[n].array then
-					error('cant read "' .. o .. '": variable isn\'t an array', 0)
+					error('can\'t read "' .. o .. '": variable isn\'t an array', 0)
 				end
 				if not dict[n].array[idx] then
 					return Value.none
@@ -325,7 +336,7 @@ function props.interp(self)
 			end
 			--print("VAR /" ..  o .. "/", dict[o] and dict[o].value or "?")
 			if not dict[o] then
-				error('cant read "' .. o .. '": no such variable', 0)
+				error('can\'t read "' .. o .. '": no such variable', 0)
 			end
 			if not dict[o].value then return Value.none end
 			return dict[o].value
@@ -411,12 +422,16 @@ Value.metaTable = {
 		elseif name == 'type' then
 			local kind = self.kind
 			if kind == ValueType_String then return "String"
+			elseif kind == ValueType_Number then return "Number"
 			elseif kind == ValueType_List then return "List"
 			elseif kind == ValueType_CommandList then return "CList"
 			elseif kind == ValueType_RawString then return "RawString"
 			elseif kind == ValueType_None then return "None"
 			elseif kind == ValueType_CompoundString then return "CString"
 			elseif kind == ValueType_Variable then return "Variable"
+			elseif kind == ValueType_Map then return "Map"
+			elseif kind == ValueType_Magic then return "Magic"
+			elseif kind == ValueType_Foreign then return "Foreign"
 			end
 		elseif name == 'execute' then
 			local compile = require('ucl.compile')

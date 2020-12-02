@@ -13,7 +13,7 @@ if arg[1] then
 	os.exit()
 end
 
-interactive:banner()
+print(interactive:banner())
 
 
 
@@ -29,7 +29,7 @@ repeat
 			print(rres)
 		end
 	else
-		print(env.colorize('\n{red-fg}%s{/}\n', rres))
+		print(interactive:colorize('\n{red-fg}%s{/}\n', rres))
 	end
 
 until false

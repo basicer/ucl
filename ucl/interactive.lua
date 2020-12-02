@@ -3,7 +3,57 @@
 local tokenize = require('ucl.tokenize')
 local env = require('ucl.env')
 
+local function colorize(fmt, ...)
+	local text = fmt:gsub("{([^}]+)}", function(k)
+		local codes = {
+			['normal'] = "\027[0",
+			['bold']   = "\027[1",
+			['dim']    = "\027[2",
+			['i']      = "\027[3",
+			['u']      = "\027[4",
+			['blink']  = "\027[5",
+			['inverse']= "\027[7",
+
+			['black-fg']   = "\027[30m",
+			['red-fg']     = "\027[31m",
+			['green-fg']   = "\027[32m",
+			['yellow-fg']  = "\027[33m",
+			['blue-fg']    = "\027[34m",
+			['magenta-fg'] = "\027[35m",
+			['cyan-fg']    = "\027[36m",
+			['white-fg']   = "\027[37m",
+			['default-fg'] = "\027[37m",
+
+			['black-bg']   = "\027[40m",
+			['red-bg']     = "\027[41m",
+			['green-bg']   = "\027[42m",
+			['yellow-bg']  = "\027[43m",
+			['blue-bg']    = "\027[44m",
+			['magenta-bg'] = "\027[45m",
+			['cyan-bg']    = "\027[46m",
+			['white-bg']   = "\027[47m",
+			['default-bg'] = "\027[47m",
+
+			['/'] =  "\027[0m"
+		}
+		if env.tty and os ~= "Windows" then
+			return codes[k]
+		elseif codes[k] then
+			return ''
+		end
+	end):format(...)
+	if env.tty and os ~= "Windows" then
+		return text .. "\027[0m"
+	else
+		return text
+	end
+end
+
 local interactive_mt = {}
+
+function interactive_mt:colorize(...)
+	return colorize(...)
+end
 
 function interactive_mt:sline(s)
 	if s then
@@ -38,7 +88,7 @@ function interactive_mt:line(s)
 			print(rres)
 		end
 	else
-		print(env.colorize('\n{red-fg}%s{/}\n', rres))
+		print(colorize('\n{red-fg}%s{/}\n', rres))
 	end
 end
 
@@ -110,16 +160,18 @@ local function new(engine)
 	}, {__index=interactive_mt})
 end
 
-local banner = {
-	version = "0.1",
-	load = env.loadstring and "+" or "-",
-	bits = env.bit and "+" or "-",
-	lua = env.lua,
-	rltype = _G.rltype,
-	os = env.os
-}
+
 
 function interactive_mt:banner()
+	local banner = {
+		version = "0.3",
+		load = env.loadstring and "+" or "-",
+		bits = pcall(env.bit.band, 1, 1) and "+" or "-",
+		lua = env.lua,
+		rltype = _G.rltype,
+		os = env.os
+	}
+
 	if env.tty then
 		local str = (([[
 	                               |
@@ -133,9 +185,8 @@ function interactive_mt:banner()
 			return banner[k]
 		end))
 
-		str = env.colorize(str:gsub("#", "{cyan-fg}{cyan-bg}#{/}"))
-		print(str)
+		return colorize(str:gsub("#", "{cyan-fg}{cyan-bg}#{/}"))
 	end
 end
 
-return {new=new}
+return {new=new, colorize=colorize}

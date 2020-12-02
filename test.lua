@@ -1,6 +1,7 @@
 local ucl = require 'ucl'
 local env = require 'ucl.env'
 local argparse = require 'ucl.argparse'
+local interactive = require 'ucl.interactive'
 
 local pass = 0
 local fail = 0
@@ -27,11 +28,11 @@ while arg[q] do
 end
 
 local function cprint(n, ...)
-	print(env.colorize("{" .. n .. "-fg}%s{/}", table.concat({...}, "\t")))
+	print(interactive.colorize("{" .. n .. "-fg}%s{/}", table.concat({...}, "\t")))
 end
 
 local function cwrite(n, ...)
-	io.write(env.colorize("{" .. n .. "-fg}%s{/}", table.concat({...}, "\t")))
+	io.write(interactive.colorize("{" .. n .. "-fg}%s{/}", table.concat({...}, "\t")))
 end
 
 local function encode(s)

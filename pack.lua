@@ -23,10 +23,14 @@ local loaded = {}
 local iofill = {}
 local files = {}
 
-iofill.read = io.read
-iofill.write = io.write
-iofill.stdout = io.stdout
-iofill.stderr = io.stderr
+if io then
+	iofill.read = io.read
+	iofill.write = io.write
+	iofill.stdout = io.stdout
+	iofill.stderr = io.stderr
+	iofill.flush = io.flush
+end
+
 iofill.glob = function(where, pattern)
 	local results = {}
 	for k,v in pairs(files) do
@@ -111,15 +115,16 @@ include("test.lua")
 include("repl.lua")
 
 out:write([[
-	-- Try to detect if we are being executed by lua repl
-	if getfenv and arg and not pcall(getfenv, 4) then
-		if arg[1] == "--test" then
-			table.remove(arg, 1)
-			req('test')
-		else
-			req('repl')
-		end
+
+-- Try to detect if we are being executed by lua repl
+if _G.arg and debug and debug.getlocal and not pcall(debug.getlocal, 4, 1) then
+	if _G.arg[1] == "--test" then
+		table.remove(arg, 1)
+		req('test')
+	else
+		req('repl')
 	end
-	return req('ucl')
+end
+return req('ucl')
 
 ]])

@@ -22,6 +22,12 @@ if havejit then
 	version = jit.version or version
 end
 
+
+if package and package.config and os == "Unknown" then
+	local s = package.config:sub(1,1)
+	if s == "\\" then os = "Windows" end
+end
+
 local loadstring = _G.loadstring or _G.load
 
 if loadstring then
@@ -70,51 +76,7 @@ local setfenv = setfenv or function(fx, env)
 	return fx
 end
 
-local function colorize(fmt, ...)
-	local text = fmt:gsub("{([^}]+)}", function(k)
-		local codes = {
-			['normal'] = "\027[0",
-			['bold']   = "\027[1",
-			['dim']    = "\027[2",
-			['i']      = "\027[3",
-			['u']      = "\027[4",
-			['blink']  = "\027[5",
-			['inverse']= "\027[7",
 
-			['black-fg']   = "\027[30m",
-			['red-fg']     = "\027[31m",
-			['green-fg']   = "\027[32m",
-			['yellow-fg']  = "\027[33m",
-			['blue-fg']    = "\027[34m",
-			['magenta-fg'] = "\027[35m",
-			['cyan-fg']    = "\027[36m",
-			['white-fg']   = "\027[37m",
-			['default-fg'] = "\027[37m",
-
-			['black-bg']   = "\027[40m",
-			['red-bg']     = "\027[41m",
-			['green-bg']   = "\027[42m",
-			['yellow-bg']  = "\027[43m",
-			['blue-bg']    = "\027[44m",
-			['magenta-bg'] = "\027[45m",
-			['cyan-bg']    = "\027[46m",
-			['white-bg']   = "\027[47m",
-			['default-bg'] = "\027[47m",
-
-			['/'] =  "\027[0m"
-		}
-		if tty and os ~= "Windows" then
-			return codes[k]
-		elseif codes[k] then
-			return ''
-		end
-	end):format(...)
-	if tty and os ~= "Windows" then
-		return text .. "\027[0m"
-	else
-		return text
-	end
-end
 
 local function numToStr(n) return '' .. n end
 
@@ -135,7 +97,6 @@ return {
 	loadstring = loadstring,
 	setfenv = setfenv,
 	lua = version,
-	colorize = colorize,
 	tty = tty,
 	os = os,
 	numToStr = numToStr

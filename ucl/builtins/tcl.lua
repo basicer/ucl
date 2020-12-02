@@ -15,11 +15,15 @@ return function(builtin)
 local function join(...)
 	local lst = {}
 	for _,v in ipairs({...}) do
-		local s = v.string:gsub("^%s+", ""):gsub("%s+$", "")
-		if #s > 0 then table.insert(lst, s) end
+		local s1 = v.string
+		local s2 = s1:gsub("^%s+", ""):gsub("%s+$", "")
+		if s1 == s2 and #s1 ~= 0 then
+			table.insert(lst, v)
+		elseif #s2 > 0 then
+			table.insert(lst, Value.fromString(s2))
+		end
 	end
-	local str = table.concat(lst, " ")
-	return Value.fromString(str)
+	return Value.fromCompoundList(lst, " ")
 end
 
 local arrays = {
@@ -454,6 +458,13 @@ function builtin.format(interp, format, ...)
 			v = string.format('%o', v):gsub('.', function(m)
 				return ({'000','001','010','011','100','101','110','111'})[m + 1]
 			end)
+		end
+
+		if (t == 'g' or t == 'e' or t == 'G') and env.os == "Windows" then
+			
+			local m = string.format('%' .. f .. p .. t, v)
+			m = m:gsub("%+0", "+"):gsub("%-0", "-")
+			return prefix .. m
 		end
 
 		--print(fmt, idx, f .. p .. m .. t, v, f,p,m,t)
