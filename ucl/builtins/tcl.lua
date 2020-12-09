@@ -360,8 +360,14 @@ function builtin.upvar(interp, level, ...)
 
 	for i=1,#va,2 do
 		local n1 = va[i].string
-		local src = target.var(n1)
-		interp.variables[va[i+1].string] = src
+		local src, created = target.var(n1)
+		local t = va[i+1].string
+
+		if t:find("%(.*%)$") then
+			error('can\'t create a upvar that looks like an array element', 0) 
+		end
+
+		interp.variables[t] = src
 	end
 
 	return Value.none
@@ -677,6 +683,19 @@ function builtin.lindex(interp, ...)
 end
 builtin.lindex.argparse = argparse("lindex list ?index?")
 
+function builtin.lrange(interp, ...)
+	local args = builtin.lrange.argparse(...)
+	if not args.start then return args.list end
+	local s = lidx(args.start, args.list.list)
+	local e = lidx(args.last, args.list.list)
+	local o = {}
+	for i=s,e do
+		table.insert(o, args.list.list[i])
+	end
+	return Value.fromList(o)
+end
+builtin.lrange.argparse = argparse("lrange list ?start? ?last?")
+
 function builtin.linsert(interp, list, idx, ...)
 	local ii = lidx(idx, list.list)
 	local lst = {unpack(list.list)}
@@ -741,11 +760,20 @@ end
 
 function builtin.lappend(interp, var, ...)
 	if not var then error('wrong # args: should be "lappend varName ?value value ...?"', 0) end
-	local v = interp.set(var)
-	if not v then v = interp.set(var, Value.none) end
+	local vr = interp.var(var.string)
+	
+	if not vr then 
+		interp.set(var, Value.none)
+		vr = interp.var(var.string)
+	end
+
+	local v = vr.value
 	local lst = {unpack(v.list)}
 	for _,av in ipairs({...}) do table.insert(lst, av) end
-	return interp.set(var, Value.fromList(lst))
+	
+	
+	vr.value = Value.fromList(lst)
+	return vr.value
 end
 
 function builtin.lsort(interp, list)

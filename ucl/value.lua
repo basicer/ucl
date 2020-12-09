@@ -30,6 +30,13 @@ end
 function Scanner:done()
 	return self.pos > self.right + 1
 end
+function Scanner:consumep(p)
+	local m = {string.find(self.source, "^" .. p, self.pos)}
+	if not m[1] then return false end
+	local v = Value.fromStringView(self.source, m[1], m[2])
+	self.pos = m[2] + 1
+	return v, select(2, env.unpack(m))
+end
 function Scanner:reverse()
 	self.pos = self.pos - 1
 end
@@ -73,36 +80,77 @@ local function escapePlan(m)
 	return "{}"
 end
 
+local function escapeString(m, k)
+	local p = escapePlan(m)
+
+	if p == '{}' then
+		m = '{' .. m .. '}'
+	elseif p == '\\' then
+		m = m:gsub("([{}%[%]\"\\\r\v\t\\\n$; ])",function(o)
+			if o == '\n' then return '\\n'
+			elseif o == '\r' then return '\\r'
+			elseif o == '\v' then return '\\v'
+			elseif o == '\t' then return '\\t'
+			elseif o == '\\' then return '\\\\'
+			else return '\\' .. o end
+		end)
+		if k == 1 and m:sub(1,1) == '#' then
+			m = '\\' .. m
+		end
+	else
+		if k == 1 and m:sub(1,1) == '#' then
+			m = '{' .. m .. '}'
+		end
+	end
+	return m
+end
+
 local function escapeList(list)
 	local mapped = {}
 	for k,v in ipairs(list) do
 		local m = v.string
-		local p = escapePlan(m)
-		--print("EP", p, "=>", m)
-
-		if p == '{}' then
-			m = '{' .. m .. '}'
-		elseif p == '\\' then
-			m = m:gsub("([{}%[%]\"\\\r\v\t\\\n$; ])",function(o)
-				if o == '\n' then return '\\n'
-				elseif o == '\r' then return '\\r'
-				elseif o == '\v' then return '\\v'
-				elseif o == '\t' then return '\\t'
-				elseif o == '\\' then return '\\\\'
-				else return '\\' .. o end
-			end)
-			if k == 1 and m:sub(1,1) == '#' then
-				m = '\\' .. m
-			end
-		else
-			if k == 1 and m:sub(1,1) == '#' then
-				m = '{' .. m .. '}'
-			end
-		end
-		mapped[k] = m
+		mapped[k] = escapeString(m, k)
 	end
 	return table.concat(mapped, " ")
+end
 
+local function tocode(v, ctx)
+	if v.kind == ValueType_CompoundString then
+		local parts = {}
+		for _,v in ipairs(v.parts) do
+			if v.kind == ValueType_CommandList then table.insert(parts,'[') end
+			table.insert(parts, tocode(v, ctx))
+			if v.kind == ValueType_CommandList then table.insert(parts,']') end
+		end
+		return table.concat(parts, v.seperator)
+	elseif v.kind == ValueType_List then
+		local ss = {}
+		for k,v in ipairs(v.list) do
+			if v.kind == ValueType_List or v.kind == ValueType_RawString then
+				ss[k] = escapeString(tocode(v, ctx))
+			else
+				ss[k] = tocode(v, {i=ctx.i})
+			end
+		end
+		return table.concat(ss, " ")
+	elseif v.kind == ValueType_CommandList then
+		local ss = {}
+		for k,v in ipairs(v.cmdlist) do
+			ss[k] = tocode(v, {i=ctx.i})
+		end
+		return "[" .. table.concat(ss, ";") .. "]"
+	elseif (v.kind == ValueType_RawString and rawget(v,'cmdlist')) then
+		local ss = {}
+		local i = (ctx.i or '')
+		for k,v in ipairs(v.cmdlist) do
+			ss[k] = tocode(v, {i = i .. '  '})
+		end
+		return "\n" .. i .. table.concat(ss, "\n" .. i) .. "\n" .. i:sub(3)
+	elseif v.kind == ValueType_Variable then
+		return v.string
+	else
+		return escapeList({v})
+	end
 end
 
 function Value.fromStringView(str, left, right, kind)
@@ -235,6 +283,10 @@ function props.cmdlist(self)
 	return list
 end
 
+function props.code(self)
+	return tocode(self, {})
+end
+
 function props.string(self)
 	local sv = rawget(self,'string_view')
 	if self.kind == ValueType_None then
@@ -259,9 +311,16 @@ function props.string(self)
 		local s = escapeList(self.list)
 		self.string = s
 		return self.string
+	elseif self.kind == ValueType_CommandList then
+		local ss = {}
+		for k,v in ipairs(self.cmdlist) do
+			ss[k] = v.string
+		end
+		return table.concat(ss, "\n")
 	end
-	error("Need a string")
+	error("Need a string, have " .. self.type)
 end
+
 
 function props.lua(self)
 	local sv = rawget(self,'string_view')
@@ -441,6 +500,8 @@ Value.metaTable = {
 			local fn = v()(self, Value)
 			self.execute = fn
 			return fn
+		elseif name == 'ipairs' then
+			return function() return ipairs(self.list) end
 		end
 		error("Index value: " .. name)
 	end,

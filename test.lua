@@ -46,6 +46,14 @@ local function encode(s)
 	end)
 end
 
+local function compareResult(actual, expected, test)
+	if test.match and test.match.string == 'glob' and actual then
+		return 1 == string.find(actual, expected:gsub('*','.+'))
+	else
+		return actual == expected
+	end
+end
+
 local function runtest(test)
 	local shouldFail = false
 	if test.constraints and test.constraints.string == "skip" then
@@ -61,6 +69,12 @@ local function runtest(test)
 	end
 
 	if test.constraints and test.constraints.string:match("luav") then
+		if showall then cprint('white', "SKIP", test.line) end
+		skip = skip + 1
+		return
+	end
+
+	if test.constraints and test.constraints.string:match("eformat") and env.os == 'Windows' then
 		if showall then cprint('white', "SKIP", test.line) end
 		skip = skip + 1
 		return
@@ -90,7 +104,7 @@ local function runtest(test)
 		cprint('red', "    " .. fail .. ") " .. test.line)
 		fails[fail] = {name = test.line, error="No result"}
 		if bail then os.exit(1) end
-	elseif result.string == test.result.string then
+	elseif compareResult(result.string, test.result.string, test) then
 		if shouldFail then
 			cwrite('yellow', "    ? ")
 			print(test.line)
