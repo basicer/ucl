@@ -1,6 +1,4 @@
 local ucl = require 'ucl'
-local env = require 'ucl.env'
-
 
 local i = ucl.new()
 i.flags.jit = 1

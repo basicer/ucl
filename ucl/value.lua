@@ -117,17 +117,17 @@ end
 local function tocode(v, ctx)
 	if v.kind == ValueType_CompoundString then
 		local parts = {}
-		for _,v in ipairs(v.parts) do
-			if v.kind == ValueType_CommandList then table.insert(parts,'[') end
-			table.insert(parts, tocode(v, ctx))
-			if v.kind == ValueType_CommandList then table.insert(parts,']') end
+		for _,pv in ipairs(v.parts) do
+			if pv.kind == ValueType_CommandList then table.insert(parts,'[') end
+			table.insert(parts, tocode(pv, ctx))
+			if pv.kind == ValueType_CommandList then table.insert(parts,']') end
 		end
 		return table.concat(parts, v.seperator)
 	elseif v.kind == ValueType_List then
 		local ss = {}
-		for k,v in ipairs(v.list) do
-			if v.kind == ValueType_List or v.kind == ValueType_RawString then
-				ss[k] = escapeString(tocode(v, ctx))
+		for k,vv in ipairs(v.list) do
+			if vv.kind == ValueType_List or vv.kind == ValueType_RawString then
+				ss[k] = escapeString(tocode(vv, ctx))
 			else
 				ss[k] = tocode(v, {i=ctx.i})
 			end
@@ -135,15 +135,15 @@ local function tocode(v, ctx)
 		return table.concat(ss, " ")
 	elseif v.kind == ValueType_CommandList then
 		local ss = {}
-		for k,v in ipairs(v.cmdlist) do
-			ss[k] = tocode(v, {i=ctx.i})
+		for k,vv in ipairs(v.cmdlist) do
+			ss[k] = tocode(vv, {i=ctx.i})
 		end
 		return "[" .. table.concat(ss, ";") .. "]"
 	elseif (v.kind == ValueType_RawString and rawget(v,'cmdlist')) then
 		local ss = {}
 		local i = (ctx.i or '')
-		for k,v in ipairs(v.cmdlist) do
-			ss[k] = tocode(v, {i = i .. '  '})
+		for k,vv in ipairs(v.cmdlist) do
+			ss[k] = tocode(vv, {i = i .. '  '})
 		end
 		return "\n" .. i .. table.concat(ss, "\n" .. i) .. "\n" .. i:sub(3)
 	elseif v.kind == ValueType_Variable then
