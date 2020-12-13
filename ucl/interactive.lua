@@ -4,7 +4,7 @@ local tokenize = require('ucl.tokenize')
 local env = require('ucl.env')
 
 local function colorize(fmt, ...)
-	local text = fmt:gsub("{([^}]+)}", function(k)
+	local text = fmt:gsub("{([^{}}]+)}", function(k)
 		local codes = {
 			['normal'] = "\027[0",
 			['bold']   = "\027[1",
@@ -23,6 +23,16 @@ local function colorize(fmt, ...)
 			['cyan-fg']    = "\027[36m",
 			['white-fg']   = "\027[37m",
 			['default-fg'] = "\027[37m",
+			['gray-fg']    = "\027[90m",
+			
+			['crimson-fg']    = "\027[91m",
+			['lime-fg']       = "\027[92m",
+			['gold-fg']       = "\027[93m",
+			['purple-fg']     = "\027[94m",
+			['pink-fg']       = "\027[95m",
+			['turquoise-fg']  = "\027[96m",
+			['bright-fg']     = "\027[97m",
+
 
 			['black-bg']   = "\027[40m",
 			['red-bg']     = "\027[41m",
@@ -36,13 +46,13 @@ local function colorize(fmt, ...)
 
 			['/'] =  "\027[0m"
 		}
-		if env.tty and os ~= "Windows" then
+		if env.color then
 			return codes[k]
 		elseif codes[k] then
 			return ''
 		end
 	end):format(...)
-	if env.tty and os ~= "Windows" then
+	if env.color then
 		return text .. "\027[0m"
 	else
 		return text

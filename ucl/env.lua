@@ -3,11 +3,11 @@ local bit = _G.bit or _G.bit32 or false
 
 local tty = true
 local version = _VERSION
-local os = "Unknown"
+local OS = "Unknown"
 
 local haveffi, ffi = pcall(require, "ffi")
 if haveffi then
-	os = ffi.os
+	OS = ffi.os
 	version = version:gsub("Lua", "Lua (jit)")
 	ffi.cdef [[
 		 int isatty(int fd);
@@ -23,9 +23,9 @@ if havejit then
 end
 
 
-if package and package.config and os == "Unknown" then
+if package and package.config and OS == "Unknown" then
 	local s = package.config:sub(1,1)
-	if s == "\\" then os = "Windows" end
+	if s == "\\" then OS = "Windows" end
 end
 
 local loadstring = _G.loadstring or _G.load
@@ -66,7 +66,7 @@ local setfenv = setfenv or function(fx, env)
 		local name = debug.getupvalue(fx, idx)
 		if not name then
 			break
-		elseif name == "__ENV" then
+		elseif name == "_ENV" then
 			debug.upvaluejoin(fx, idx, function() return env end, 1)
 			break
 		end
@@ -98,6 +98,7 @@ return {
 	setfenv = setfenv,
 	lua = version,
 	tty = tty,
-	os = os,
-	numToStr = numToStr
+	os = OS,
+	numToStr = numToStr,
+	color = tty and (OS ~= "Windows" or (os and os.getenv and os.getenv("SHELL")))
 }
