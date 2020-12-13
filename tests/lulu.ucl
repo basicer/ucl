@@ -1,0 +1,105 @@
+lua {
+    rawset(_G, 'x', function() return 1,2,3 end)
+}
+
+proc leval {s} {
+    lua {
+        local result = ''
+        rawset(_G, 'o', function(...)
+            result = result .. "\n"
+            for i,v in ipairs({...}) do
+                if i > 1 then result = result .. " " end
+                result = result .. tostring(v)
+            end
+        end)
+        
+        local tk = require('ucl.lulu.lexer')
+        local vm = require('ucl.lulu.vm')
+        local gen = require('ucl.lulu.gen')
+        local t = tk.tokenize(variables.s)
+        local c = function(...) return interp.engine.interactive():colorize(...) end
+        print(tk.hilight(variables.s, c))
+        local o = gen.compile(variables.s)
+        print(o)
+        return result .. "\n"
+    }
+}
+
+
+
+test lulu-3 {} {fails} {
+    leval {
+local y = 1
+local color = {
+    [Token_Comment] = 'gray',
+    [Token_If] = 'crimson',
+    [Token_Then] = 'crimson',
+    [Token_Else] = 'crimson',
+    [Token_ElseIf] = 'crimson',
+    [Token_End] = 'crimson',
+    [Token_String] = 'green',
+    [Token_Name] = 'cyan',
+    [Token_Number] = 'purple',
+    x = 10,
+    y
+}
+    }
+} 10
+
+
+set i 1
+proc check {s} {
+    test "lulu-2.[incr i]" {} {
+        leval $s
+    } [lua {
+        local result = ''
+        rawset(_G, 'o', function(...)
+            result = result .. "\n"
+            for i,v in ipairs({...}) do
+                if i > 1 then result = result .. " " end
+                result = result .. tostring(v)
+            end
+        end)
+        local fx = load(tostring(variables.s))
+        fx()
+        return result .. "\n"
+    }]
+}
+
+
+check { o(77, 'hi', nil, true) }
+check {
+    -- comment
+        if 10 == 2*5 then
+            o("tacos", x(), 7)
+        end
+}
+
+check {
+    -- comment
+        if 11 == 2*5 then
+            o("tacos", x(), 7)
+        end
+}
+
+check { o(math.sin(7)) }
+check { o(math['si' .. 'n'](7)) }
+
+check {
+    o([[
+        1
+        2
+        3
+    ]])
+}
+check { o(2*3+4) }
+check { o(2+3*4) }
+check { o(30-6-5-4) }
+check { o(2^3^4) }
+
+check { o([[
+abc]]) }
+check { o([[abc]]) }
+check { o(3.6) }
+
+check { while false do o(8) end o(2) }
