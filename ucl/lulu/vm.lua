@@ -181,13 +181,23 @@ local function exec(proto)
             end
             local r = { R[A](env.unpack(args)) }
 
-            for i=1,C do
+            for i=1,C-1 do
                 R[A+i-1] = r[i]
             end
 
             pc = pc + 1
         elseif op == OP.RETURN then
             return
+        elseif op == OP.FORLOOP then
+            R[A] = R[A] + R[A+2]
+            if R[A] <= R[A+1] then
+                pc = pc + sBx + 1
+            else
+                pc = pc + 1
+            end
+        elseif op == OP.FORPREP then
+            R[A] = R[A] - R[A+2]
+            pc = pc + sBx + 1
         else
             error("Unknown OpCode:" .. op_names[op])
         end

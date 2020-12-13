@@ -45,10 +45,11 @@ function state_mt:slot()
     local s = #self.slots + 1
     if self.maxslot < s then self.maxslot = s end
     self.slots[s] = 1
-    return s
+    return s - 1
 end
 
 function state_mt:take(s)
+    s = s + 1
     assert(self.slots[s] == nil)
     if self.maxslot < s then self.maxslot = s end
     self.slots[s] = 1
@@ -56,6 +57,7 @@ end
 
 
 function state_mt:release(s)
+    s = s + 1
     self.slots[s] = nil
 end
 
@@ -127,7 +129,7 @@ local function parseSimpleExpr(s, slot)
 
         if s:is(Token.OpenParen) then
             local args = parseArgumentList(s, slot+1)
-            s:emitABC(OP.CALL, slot, args+1, 1)
+            s:emitABC(OP.CALL, slot, args+1, 2)
             return
         end
     else
@@ -165,7 +167,6 @@ local opr_data = {
 }
 
 local function parseExpPart(s, slot, max)
-    print("D", max)
     parseSimpleExpr(s, slot)
     local op
     while true do
@@ -178,10 +179,9 @@ local function parseExpPart(s, slot, max)
         if nfo.l >= max then
             return s.last
         end
-        print("K", nfo.l)
+
         op = parseExpPart(s, slot + 1, nfo.r)
         
-        print("E", op_names[nfo.op])
         if nfo.b then
             s:emitABC(nfo.op, 1, slot, slot + 1)
             s:emitABx(OP.JMP, 0, 1)
@@ -258,15 +258,43 @@ local function parseStat(s)
         s:need(Token.Do)
         parseBlock(s)
         s:need(Token.End)
-        print("XX")
         s.proto.B[tt] = #s.proto.op - tt
         return
-    elseif s:is(Token.Repeat) then
-        error("No suppport for repeat", 0)
+    elseif s:eat(Token.Repeat) then
+        local tt = #s.proto.op + 1
+        parseBlock(s)
+        s:need(Token.Until)
+        local cond = s:slot()
+        parseExp(s, cond)
+        s:emitABC(OP.TEST, cond, 0, 1)
+        s:emitABx(OP.JMP, 0, tt - #s.proto.op - 2)
+        return
     elseif s:is(Token.If) then
         return parseIf(s)
     elseif s:eat(Token.For) then
-        error("No suppport for for", 0)
+
+        s:eat(Token.Name)
+        s:need(Token.Equals)
+        local start = s:slot()
+        parseExp(s, start)
+        s:need(Token.Comma)
+        local stop = s:slot()
+        parseExp(s, stop)
+        local incr = s:slot()
+        local var = s:slot()
+        s:emitABx(OP.LOADK, incr, 1)
+
+        s:need(Token.Do)
+
+        s:emitABx(OP.FORPREP, start, 0)
+        local tt = #s.proto.op
+
+        parseBlock(s)
+
+        s:need(Token.End)
+        s:emitABx(OP.FORLOOP, start, tt - #s.proto.op - 1)
+        s.proto.B[tt] = #s.proto.op - tt - 1
+
     elseif s:is(Token.Function) then
     elseif s:is(Token.Name) then
         local v = s:slot()
@@ -274,12 +302,13 @@ local function parseStat(s)
 
         if s:is(Token.OpenParen) then
             local args = parseArgumentList(s, v+1)
-            s:emitABC(OP.CALL, v, args+1, 0)
+            s:emitABC(OP.CALL, v, args+1, 1)
             return
         end
         s:panic("Parsing nameish thing")
+    else
+        s:panic("parsing stat")
     end
-    s:panic("parsing stat")
 end
 
 
@@ -288,6 +317,7 @@ parseBlock = function(s)
     while true do
         if s:is(Token.EOF) then break end
         if s:is(Token.End) then break end
+        if s:is(Token.Until) then break end
         if s:is(Token.Return) then break end
         parseStat(s)
     end
@@ -321,7 +351,7 @@ local function compile(code)
 
     local p = state.proto
     local o = {}
-    table.insert(o, string.format("names <stdin:%d,%d> (%d instrictions)", 0, 0, #p.op))
+    table.insert(o, string.format("names <stdin:%d,%d> (%d instructions)", 0, 0, #p.op))
     table.insert(o, string.format("%d param, %d slots, %d upvalues, %d local, %d constants, %d functions", 0, state.maxslot, 0, 0, 0, 0))
 
     for i,op in ipairs(p.op) do

@@ -103,3 +103,8 @@ check { o([[abc]]) }
 check { o(3.6) }
 
 check { while false do o(8) end o(2) }
+
+check { repeat o() until x() }
+
+
+check { for i=1,10 do o(2) end }
